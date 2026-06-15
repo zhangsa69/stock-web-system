@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # Hermes Agent
     hermes_bin: str = "hermes"
     hermes_home: str = os.path.expanduser("~/.hermes")
-    hermes_timeout: int = 600
+    hermes_timeout: int = 900
     hermes_max_workers: int = 4
     hermes_mock: bool = False  # Mock模式（开发调试用，生产环境设False）
 

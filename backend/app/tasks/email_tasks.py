@@ -53,6 +53,7 @@ def send_analysis_email(self, task_id: str):
                 stock_code=task.stock_code,
                 stock_name=task.stock_name or task.stock_code,
                 report=task.report,
+                html_report=task.html_report,
             )
             logger.info("[EMAIL_SEND][SUCCESS] task_id=%s", task_id)
 

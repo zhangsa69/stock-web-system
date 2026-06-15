@@ -22,6 +22,7 @@ class AnalysisStatusResponse(BaseModel):
     status: str
     progress: float
     report: Optional[str] = None
+    html_report: Optional[str] = None
     error: Optional[str] = None
     created_at: datetime
     updated_at: datetime

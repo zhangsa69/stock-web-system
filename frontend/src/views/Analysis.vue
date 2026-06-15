@@ -12,6 +12,13 @@ const stockCode = ref("");
 const userEmail = ref("");
 
 onMounted(() => {
+  // 从历史页面跳转：/analysis/:taskId
+  const taskId = route.params.taskId as string | undefined;
+  if (taskId) {
+    store.fetchStatus(taskId);
+    return;
+  }
+  // 带参数跳转：/analysis?code=xxx&email=xxx
   if (route.query.code) {
     stockCode.value = route.query.code as string;
     userEmail.value = (route.query.email as string) || "";
@@ -105,6 +112,7 @@ function handleSubmit() {
     <AnalysisReport
       v-if="store.currentStatus?.status === 'completed' && store.currentStatus?.report"
       :report="store.currentStatus.report"
+      :html-report="store.currentStatus.html_report"
       :stock-code="store.currentStatus.stock_code"
       :stock-name="store.currentStatus.stock_name || store.currentStatus.stock_code"
     />

@@ -70,6 +70,7 @@ class AnalysisService:
         status: TaskStatus,
         progress: float | None = None,
         report: str | None = None,
+        html_report: str | None = None,
         error: str | None = None,
         celery_task_id: str | None = None,
     ):
@@ -83,6 +84,8 @@ class AnalysisService:
             task.progress = progress
         if report is not None:
             task.report = report
+        if html_report is not None:
+            task.html_report = html_report
         if error is not None:
             task.error = error
         if celery_task_id is not None:

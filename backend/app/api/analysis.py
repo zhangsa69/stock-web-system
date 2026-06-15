@@ -110,6 +110,7 @@ async def get_analysis_status(
         status=task.status.value,
         progress=task.progress,
         report=task.report,
+        html_report=task.html_report,
         error=task.error,
         created_at=task.created_at,
         updated_at=task.updated_at,

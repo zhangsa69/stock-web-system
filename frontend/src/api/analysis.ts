@@ -13,6 +13,7 @@ export interface AnalysisStatus {
   status: string;
   progress: number;
   report: string | null;
+  html_report: string | null;
   error: string | null;
   created_at: string;
   updated_at: string;

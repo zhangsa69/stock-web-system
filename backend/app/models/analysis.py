@@ -27,6 +27,7 @@ class AnalysisTask(Base):
     )
     progress: Mapped[float] = mapped_column(Float, default=0.0)
     report: Mapped[str | None] = mapped_column(Text, nullable=True)
+    html_report: Mapped[str | None] = mapped_column(Text, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     user_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     celery_task_id: Mapped[str | None] = mapped_column(String(100), nullable=True)

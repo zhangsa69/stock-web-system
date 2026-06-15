@@ -10,6 +10,14 @@ RUN apt-get update && \
         curl \
         gnupg \
         ca-certificates \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf-2.0-0 \
+        libcairo2 \
+        libpangoft2-1.0-0 \
+        libffi-dev \
+        shared-mime-info \
+        fonts-noto-cjk \
     && install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" \
