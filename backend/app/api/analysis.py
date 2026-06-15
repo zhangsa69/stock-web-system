@@ -38,6 +38,7 @@ async def start_analysis(
     task = await service.create_task(
         stock_code=req.stock_code,
         skill_name=req.skill_name,
+        user_email=req.email,
     )
 
     # 提交 Celery 异步任务

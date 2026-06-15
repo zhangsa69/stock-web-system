@@ -34,8 +34,8 @@ export interface HistoryResponse {
 }
 
 export const analysisApi = {
-  start(stockCode: string, skillName = "stock-analysis"): Promise<AnalysisResponse> {
-    return client.post("/analysis/start", { stock_code: stockCode, skill_name: skillName }).then((r) => r.data);
+  start(stockCode: string, email: string, skillName = "cninfo-financial-analysis"): Promise<AnalysisResponse> {
+    return client.post("/analysis/start", { stock_code: stockCode, email, skill_name: skillName }).then((r) => r.data);
   },
 
   getStatus(taskId: string): Promise<AnalysisStatus> {

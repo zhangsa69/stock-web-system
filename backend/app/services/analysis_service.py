@@ -17,8 +17,9 @@ class AnalysisService:
     async def create_task(
         self,
         stock_code: str,
-        skill_name: str = "stock-analysis",
+        skill_name: str = "cninfo-financial-analysis",
         stock_name: str | None = None,
+        user_email: str | None = None,
     ) -> AnalysisTask:
         """创建分析任务"""
         task = AnalysisTask(
@@ -28,6 +29,7 @@ class AnalysisService:
             skill_name=skill_name,
             status=TaskStatus.PENDING,
             progress=0.0,
+            user_email=user_email,
         )
         self.db.add(task)
         await self.db.flush()

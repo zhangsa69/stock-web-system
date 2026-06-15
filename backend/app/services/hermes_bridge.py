@@ -69,7 +69,7 @@ class HermesBridge:
         调用 Hermes skill 分析股票
 
         Args:
-            skill_name: skill 名称，如 "stock-analysis"
+            skill_name: skill 名称，如 "cninfo-financial-analysis"
             stock_code: 股票代码，如 "600519"
             timeout: 超时秒数，默认取配置
 

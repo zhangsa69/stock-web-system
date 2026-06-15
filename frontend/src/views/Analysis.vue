@@ -9,30 +9,38 @@ import { Search, Loader2 } from "lucide-vue-next";
 const route = useRoute();
 const store = useAnalysisStore();
 const stockCode = ref("");
+const userEmail = ref("");
 
 onMounted(() => {
   if (route.query.code) {
     stockCode.value = route.query.code as string;
-    store.startAnalysis(route.query.code as string);
+    userEmail.value = (route.query.email as string) || "";
+    if (userEmail.value) {
+      store.startAnalysis(route.query.code as string, userEmail.value);
+    }
   }
 });
 
 watch(
-  () => route.query.code,
-  (newCode) => {
+  () => [route.query.code, route.query.email],
+  ([newCode, newEmail]) => {
     if (newCode) {
       stockCode.value = newCode as string;
+      userEmail.value = (newEmail as string) || "";
       store.reset();
-      store.startAnalysis(newCode as string);
+      if (userEmail.value) {
+        store.startAnalysis(newCode as string, userEmail.value);
+      }
     }
   }
 );
 
 function handleSubmit() {
   const code = stockCode.value.trim();
-  if (!code) return;
+  const email = userEmail.value.trim();
+  if (!code || !email) return;
   store.reset();
-  store.startAnalysis(code);
+  store.startAnalysis(code, email);
 }
 </script>
 
@@ -54,12 +62,22 @@ function handleSubmit() {
         />
         <button
           @click="handleSubmit"
-          :disabled="!stockCode.trim() || store.isLoading"
+          :disabled="!stockCode.trim() || !userEmail.trim() || store.isLoading"
           class="px-6 py-2.5 bg-gradient-to-r from-[#D4A843] to-[#F0C060] text-[#0A1929] font-semibold rounded-lg hover:opacity-90 disabled:opacity-40 transition-opacity flex items-center gap-2"
         >
           <Loader2 v-if="store.isLoading" :size="16" class="animate-spin" />
           {{ store.isLoading ? "分析中..." : "开始分析" }}
         </button>
+      </div>
+      <!-- 邮箱输入框 -->
+      <div class="mt-3">
+        <input
+          v-model="userEmail"
+          type="email"
+          placeholder="输入您的邮箱（必填，分析完成后发送报告）"
+          class="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-[#5C6E8A] text-sm focus:border-[#D4A843] outline-none transition-colors"
+          @keyup.enter="handleSubmit"
+        />
       </div>
     </div>
 

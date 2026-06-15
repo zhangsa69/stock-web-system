@@ -5,11 +5,13 @@ import { Search, TrendingUp, FileText, Brain, Shield, Zap } from "lucide-vue-nex
 
 const router = useRouter();
 const stockCode = ref("");
+const userEmail = ref("");
 
 function startAnalysis() {
   const code = stockCode.value.trim();
-  if (!code) return;
-  router.push({ path: "/analysis", query: { code } });
+  const email = userEmail.value.trim();
+  if (!code || !email) return;
+  router.push({ path: "/analysis", query: { code, email } });
 }
 
 const features = [
@@ -73,11 +75,21 @@ const features = [
             />
             <button
               @click="startAnalysis"
-              :disabled="!stockCode.trim()"
+              :disabled="!stockCode.trim() || !userEmail.trim()"
               class="mr-2 px-6 py-2.5 bg-gradient-to-r from-[#D4A843] to-[#F0C060] text-[#0A1929] font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 transition-opacity"
             >
               开始分析
             </button>
+          </div>
+          <!-- 邮箱输入框 -->
+          <div class="max-w-xl mx-auto mt-4">
+            <input
+              v-model="userEmail"
+              type="email"
+              placeholder="输入您的邮箱（必填，分析完成后发送报告）"
+              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-[#5C6E8A] text-sm focus:border-[#D4A843] outline-none transition-colors"
+              @keyup.enter="startAnalysis"
+            />
           </div>
         </div>
       </div>
@@ -116,7 +128,7 @@ const features = [
           <button
             v-for="code in ['600519', '000858', '00700']"
             :key="code"
-            @click="router.push({ path: '/analysis', query: { code } })"
+            @click="stockCode = code"
             class="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[#8B9CB5] hover:border-[#D4A843]/50 hover:text-[#F0C060] transition-all text-sm"
           >
             {{ code }}

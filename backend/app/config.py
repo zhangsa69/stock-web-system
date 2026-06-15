@@ -42,10 +42,18 @@ class Settings(BaseSettings):
     hermes_home: str = os.path.expanduser("~/.hermes")
     hermes_timeout: int = 600
     hermes_max_workers: int = 4
-    hermes_mock: bool = True  # True=本地Mock模式，生产环境设False
+    hermes_mock: bool = False  # Mock模式（开发调试用，生产环境设False）
 
     # 任务缓存（天）
     analysis_cache_days: int = 7
+
+    # SMTP 邮件
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_use_tls: bool = True
 
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:80,http://localhost:3000"

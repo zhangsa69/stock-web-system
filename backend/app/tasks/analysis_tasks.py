@@ -46,6 +46,9 @@ def run_hermes_skill(self, task_id: str, skill_name: str, stock_code: str):
                     progress=1.0,
                     report=result["report"],
                 )
+                # 分析完成后异步发送邮件
+                from .email_tasks import send_analysis_email
+                send_analysis_email.delay(task_id)
             else:
                 await service.update_task_status(
                     task_id=task_id,

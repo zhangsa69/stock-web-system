@@ -9,7 +9,7 @@ celery_app = Celery(
     "stock_analysis",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.tasks.analysis_tasks"],
+    include=["app.tasks.analysis_tasks", "app.tasks.email_tasks"],
 )
 
 celery_app.conf.update(

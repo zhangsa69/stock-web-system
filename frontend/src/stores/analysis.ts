@@ -8,10 +8,10 @@ export const useAnalysisStore = defineStore("analysis", () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  async function startAnalysis(stockCode: string) {
+  async function startAnalysis(stockCode: string, email: string) {
     isLoading.value = true;
     error.value = null;
-    const result = await analysisApi.start(stockCode);
+    const result = await analysisApi.start(stockCode, email);
     currentTaskId.value = result.task_id;
 
     // 如果已缓存，直接获取结果
