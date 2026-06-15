@@ -10,12 +10,50 @@ cd "$(dirname "$0")"
 
 # 1. 检查 Hermes 是否已安装
 echo "[1/4] 检查 Hermes Agent..."
-if [ ! -f "/usr/local/bin/hermes" ]; then
-    echo "  ⚠ 未找到 /usr/local/bin/hermes，请先安装 Hermes Agent"
-    echo "  参考: pip install hermes-agent"
-    exit 1
+
+# 查找 hermes 命令（支持 pip/pipx 不同安装路径）
+HERMES_CMD=""
+for candidate in "/usr/local/bin/hermes" "/root/.local/bin/hermes" "$HOME/.local/bin/hermes"; do
+    if [ -f "$candidate" ]; then
+        HERMES_CMD="$candidate"
+        break
+    fi
+done
+
+# 也尝试用 which 查找
+if [ -z "$HERMES_CMD" ]; then
+    HERMES_CMD=$(which hermes 2>/dev/null || echo "")
 fi
-echo "  ✅ Hermes CLI 已就绪"
+
+if [ -n "$HERMES_CMD" ] && [ -f "$HERMES_CMD" ]; then
+    echo "  ✅ Hermes CLI 已就绪 ($HERMES_CMD)"
+
+    # 如果不在 /usr/local/bin/（比如 pipx 装在了 ~/.local/bin/），
+    # 自动创建软链接，因为 docker-compose.yml 需要这个路径
+    if [ "$HERMES_CMD" != "/usr/local/bin/hermes" ] && [ ! -f "/usr/local/bin/hermes" ]; then
+        echo "  🔗 创建软链接: $HERMES_CMD -> /usr/local/bin/hermes"
+        ln -sf "$HERMES_CMD" /usr/local/bin/hermes
+    fi
+else
+    echo "  ⚠ 未在宿主机找到 hermes 命令"
+    echo "  "
+    echo "  如果你已经在 Docker 中运行 Hermes（独立容器），可以跳过此检查。"
+    echo "  但请注意：docker-compose.yml 会将宿主机的 hermes 挂载到后端容器中，"
+    echo "  如果宿主机没有 hermes，后端容器将无法调用它。"
+    echo "  "
+    echo "  推荐安装方式（Debian 12+/Ubuntu 24+）："
+    echo "     sudo apt install pipx -y"
+    echo "     pipx ensurepath"
+    echo "     pipx install hermes-agent"
+    echo "     ln -s ~/.local/bin/hermes /usr/local/bin/hermes"
+    echo "  "
+    read -p "  是否继续部署？(y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "  已取消部署。"
+        exit 1
+    fi
+fi
 
 # 2. 构建前端
 echo "[2/4] 构建前端..."
