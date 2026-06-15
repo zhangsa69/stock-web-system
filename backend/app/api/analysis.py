@@ -88,7 +88,7 @@ async def start_analysis(
     return AnalysisResponse(
         task_id=task.id,
         status="pending",
-        estimated_seconds=180,
+        estimated_seconds=600,
     )
 
 

@@ -12,7 +12,7 @@ class AnalysisRequest(BaseModel):
 class AnalysisResponse(BaseModel):
     task_id: str
     status: str
-    estimated_seconds: int = 180
+    estimated_seconds: int = 600
 
 
 class AnalysisStatusResponse(BaseModel):

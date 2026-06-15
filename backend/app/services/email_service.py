@@ -8,6 +8,7 @@ import traceback
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from ..config import settings
+from .report_html import md_to_html
 
 logger = logging.getLogger("stock-analysis.email")
 
@@ -50,6 +51,7 @@ class EmailService:
             msg["To"] = to_email
             msg["Subject"] = f"【股票分析】{stock_code} {stock_name} 分析报告"
 
+            # Plain text（兜底，老邮件客户端）
             text = (
                 f"股票 {stock_name}({stock_code}) 的 AI 分析报告：\n\n"
                 f"{report}\n\n"
@@ -57,9 +59,14 @@ class EmailService:
                 f"本邮件由 AI 股票分析平台自动发送"
             )
             msg.attach(MIMEText(text, "plain", "utf-8"))
+
+            # HTML（主力，现代邮件客户端）
+            html_body = md_to_html(report, stock_code=stock_code)
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+
             logger.debug(
-                "[EMAIL_SEND][MSG_BUILT] 邮件构建完成 | to=%s subject=%s size=%d",
-                to_email, msg["Subject"], len(text),
+                "[EMAIL_SEND][MSG_BUILT] 邮件构建完成 | to=%s subject=%s plain=%d html=%d",
+                to_email, msg["Subject"], len(text), len(html_body),
             )
         except Exception as e:
             logger.error(

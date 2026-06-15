@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     hermes_max_workers: int = 4
     hermes_mock: bool = False  # Mock模式（开发调试用，生产环境设False）
 
+    # CNinfo → NotebookLM 流水线路径（宿主机路径，通过 docker exec 在 hermes-agent 容器内执行）
+    cninfo_project_dir: str = "/opt/data/CNinfo2Notebookllm"
+    notebooklm_dir: str = "/opt/data/home/.notebooklm"
+    hermes_container: str = "hermes-agent"  # Hermes Agent 的 Docker 容器名
+
     # 任务缓存（天）
     analysis_cache_days: int = 7
 

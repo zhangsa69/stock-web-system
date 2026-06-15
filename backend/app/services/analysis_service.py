@@ -89,6 +89,7 @@ class AnalysisService:
             task.celery_task_id = celery_task_id
         task.updated_at = datetime.utcnow()
         await self.db.flush()
+        await self.db.commit()
         logger.info(
             "[ANALYSIS][STATUS] 状态更新 | task_id=%s status=%s progress=%s",
             task_id, status.value, progress,

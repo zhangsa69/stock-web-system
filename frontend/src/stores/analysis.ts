@@ -31,7 +31,7 @@ export const useAnalysisStore = defineStore("analysis", () => {
     return status;
   }
 
-  async function pollStatus(taskId: string, maxAttempts = 120) {
+  async function pollStatus(taskId: string, maxAttempts = 450) {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, 2000));
       const status = await fetchStatus(taskId);
