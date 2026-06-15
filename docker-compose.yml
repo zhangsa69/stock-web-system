@@ -27,9 +27,8 @@ services:
     environment:
       - APP_ENV=production
     volumes:
-      # 映射 Hermes CLI 和配置（去掉 :ro，Hermes 运行时可能需要写日志/缓存）
-      - /usr/local/bin/hermes:/usr/local/bin/hermes:ro
-      - /root/.hermes:/root/.hermes
+      # Docker socket（供 backend 调用 hermes-agent 容器）
+      - /var/run/docker.sock:/var/run/docker.sock
       # PDF 缓存目录
       - ./docker-data/pdf_cache:/app/pdf_cache
     ports:
@@ -55,8 +54,8 @@ services:
     environment:
       - APP_ENV=production
     volumes:
-      - /usr/local/bin/hermes:/usr/local/bin/hermes:ro
-      - /root/.hermes:/root/.hermes
+      # Docker socket（供 celery-worker 调用 hermes-agent 容器）
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./docker-data/pdf_cache:/app/pdf_cache
       - ./docker-data/hermes_sessions:/tmp/hermes_sessions
     depends_on:

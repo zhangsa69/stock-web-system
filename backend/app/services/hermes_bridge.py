@@ -8,12 +8,8 @@ Hermes CLI 桥接层
 
 import asyncio
 import logging
-import os
 import random
-import shutil
-import tempfile
 import traceback
-from pathlib import Path
 from ..config import settings
 
 logger = logging.getLogger("stock-analysis.hermes")
@@ -92,30 +88,25 @@ class HermesBridge:
                 "error": None,
             }
 
-        # ===== 真实模式：通过 subprocess 调用 Hermes CLI =====
+        # ===== 真实模式：通过 docker exec 调用 hermes-agent 容器内的 Hermes =====
         timeout = timeout or self.timeout
-        session_dir = tempfile.mkdtemp(prefix="hermes_session_")
 
-        env = {
-            **os.environ,
-            "HERMES_HOME": self.hermes_home,
-            "HERMES_SESSION_DIR": session_dir,
-        }
-
-        cmd = [self.hermes_bin, "skill", skill_name, "--code", stock_code]
+        cmd = [
+            "docker", "exec", "hermes-agent",
+            self.hermes_bin, "skill", skill_name, "--code", stock_code,
+        ]
         logger.info(
-            "[HERMES_COMM][INVOKE] 启动子进程 | skill=%s stock=%s cmd=%s session=%s",
-            skill_name, stock_code, " ".join(cmd), session_dir,
+            "[HERMES_COMM][INVOKE] 通过docker exec启动 | skill=%s stock=%s cmd=%s",
+            skill_name, stock_code, " ".join(cmd),
         )
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            env=env,
         )
         logger.info(
-            "[HERMES_COMM][PROC_START] 子进程已启动 | pid=%s",
+            "[HERMES_COMM][PROC_START] docker exec子进程已启动 | pid=%s",
             process.pid,
         )
 
@@ -195,11 +186,7 @@ class HermesBridge:
             }
 
         finally:
-            shutil.rmtree(session_dir, ignore_errors=True)
-            logger.debug(
-                "[HERMES_COMM][CLEANUP] 临时目录已清理 | session=%s",
-                session_dir,
-            )
+            pass
 
     def _parse_report(self, raw_output: str) -> str:
         """从 Hermes 输出中提取分析报告。
