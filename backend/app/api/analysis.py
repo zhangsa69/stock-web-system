@@ -2,6 +2,7 @@
 分析 API 路由
 """
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
@@ -14,6 +15,7 @@ from ..schemas.analysis import (
 from ..services.analysis_service import AnalysisService
 from ..models.analysis import TaskStatus
 
+logger = logging.getLogger("stock-analysis.api")
 router = APIRouter()
 
 
@@ -23,11 +25,19 @@ async def start_analysis(
     db: AsyncSession = Depends(get_db),
 ):
     """提交股票分析任务"""
+    logger.info(
+        "[ANALYSIS][START] 收到分析请求 | stock_code=%s skill=%s email=%s",
+        req.stock_code, req.skill_name, req.email,
+    )
     service = AnalysisService(db)
 
     # 检查缓存
     cached = await service.get_cached_task(req.stock_code, req.skill_name)
     if cached:
+        logger.info(
+            "[ANALYSIS][CACHE_HIT] 命中缓存 | task_id=%s stock_code=%s",
+            cached.id, req.stock_code,
+        )
         return AnalysisResponse(
             task_id=cached.id,
             status="completed",
@@ -40,14 +50,34 @@ async def start_analysis(
         skill_name=req.skill_name,
         user_email=req.email,
     )
+    logger.info(
+        "[ANALYSIS][TASK_CREATED] 任务已创建 | task_id=%s stock_code=%s",
+        task.id, req.stock_code,
+    )
 
     # 提交 Celery 异步任务
-    from ..tasks.analysis_tasks import run_hermes_skill
-    celery_task = run_hermes_skill.delay(
-        task_id=task.id,
-        skill_name=req.skill_name,
-        stock_code=req.stock_code,
-    )
+    try:
+        from ..tasks.analysis_tasks import run_hermes_skill
+        celery_task = run_hermes_skill.delay(
+            task_id=task.id,
+            skill_name=req.skill_name,
+            stock_code=req.stock_code,
+        )
+        logger.info(
+            "[ANALYSIS][CELERY_SUBMIT] Celery任务已提交 | task_id=%s celery_id=%s",
+            task.id, celery_task.id,
+        )
+    except Exception as e:
+        logger.error(
+            "[ANALYSIS][CELERY_FAIL] Celery提交失败 | task_id=%s reason=%s",
+            task.id, str(e), exc_info=True,
+        )
+        await service.update_task_status(
+            task_id=task.id,
+            status=TaskStatus.FAILED,
+            error=f"任务调度失败: {str(e)}",
+        )
+        raise HTTPException(status_code=500, detail="分析任务调度失败，请稍后重试")
 
     await service.update_task_status(
         task_id=task.id,

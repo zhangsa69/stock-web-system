@@ -3,11 +3,14 @@
 """
 
 import uuid
+import logging
 from datetime import datetime, timedelta
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..models.analysis import AnalysisTask, TaskStatus
 from ..config import settings
+
+logger = logging.getLogger("stock-analysis.service")
 
 
 class AnalysisService:
@@ -33,6 +36,7 @@ class AnalysisService:
         )
         self.db.add(task)
         await self.db.flush()
+        logger.debug("[ANALYSIS][DB_CREATE] 任务写入数据库 | task_id=%s", task.id)
         return task
 
     async def get_task(self, task_id: str) -> AnalysisTask | None:
@@ -72,6 +76,7 @@ class AnalysisService:
         """更新任务状态"""
         task = await self.get_task(task_id)
         if not task:
+            logger.error("[ANALYSIS][DB_UPDATE] 任务不存在 | task_id=%s", task_id)
             return
         task.status = status
         if progress is not None:
@@ -84,6 +89,10 @@ class AnalysisService:
             task.celery_task_id = celery_task_id
         task.updated_at = datetime.utcnow()
         await self.db.flush()
+        logger.info(
+            "[ANALYSIS][STATUS] 状态更新 | task_id=%s status=%s progress=%s",
+            task_id, status.value, progress,
+        )
 
     async def get_cached_task(self, stock_code: str, skill_name: str) -> AnalysisTask | None:
         """查找同一股票在缓存期内的已完成分析"""

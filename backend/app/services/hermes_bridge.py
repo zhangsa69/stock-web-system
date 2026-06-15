@@ -7,12 +7,16 @@ Hermes CLI 桥接层
 """
 
 import asyncio
+import logging
 import os
 import random
 import shutil
 import tempfile
+import traceback
 from pathlib import Path
 from ..config import settings
+
+logger = logging.getLogger("stock-analysis.hermes")
 
 MOCK_REPORTS = {
     "default": """## 📊 {stock_code} 财务分析报告
@@ -99,12 +103,20 @@ class HermesBridge:
         }
 
         cmd = [self.hermes_bin, "skill", skill_name, "--code", stock_code]
+        logger.info(
+            "[HERMES_COMM][INVOKE] 启动子进程 | skill=%s stock=%s cmd=%s session=%s",
+            skill_name, stock_code, " ".join(cmd), session_dir,
+        )
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=env,
+        )
+        logger.info(
+            "[HERMES_COMM][PROC_START] 子进程已启动 | pid=%s",
+            process.pid,
         )
 
         try:
@@ -115,7 +127,16 @@ class HermesBridge:
             stdout_text = stdout.decode("utf-8", errors="replace")
             stderr_text = stderr.decode("utf-8", errors="replace")
 
+            logger.info(
+                "[HERMES_COMM][PROC_END] 子进程结束 | pid=%s returncode=%s stdout_len=%d stderr_len=%d",
+                process.pid, process.returncode, len(stdout_text), len(stderr_text),
+            )
+
             if process.returncode != 0:
+                logger.error(
+                    "[HERMES_COMM][NONZERO_EXIT] 子进程异常退出 | pid=%s returncode=%s stderr=%s",
+                    process.pid, process.returncode, stderr_text[:500],
+                )
                 return {
                     "success": False,
                     "report": "",
@@ -124,22 +145,49 @@ class HermesBridge:
 
             report = self._parse_report(stdout_text)
             if not report:
+                logger.warning(
+                    "[HERMES_COMM][EMPTY_REPORT] 未解析到报告内容，使用原始输出 | pid=%s",
+                    process.pid,
+                )
                 report = stdout_text
 
+            logger.info(
+                "[HERMES_COMM][SUCCESS] 通信完成，报告已提取 | pid=%s report_len=%d",
+                process.pid, len(report),
+            )
             return {"success": True, "report": report, "error": None}
 
         except asyncio.TimeoutError:
             process.kill()
             await process.wait()
+            logger.error(
+                "[HERMES_COMM][TIMEOUT] 子进程超时 | pid=%s timeout=%ds skill=%s stock=%s",
+                process.pid, timeout, skill_name, stock_code,
+            )
             return {
                 "success": False,
                 "report": "",
-                "error": f"Hermes 分析超时（{self.timeout}秒）",
+                "error": f"Hermes 分析超时（{timeout}秒）",
+            }
+
+        except FileNotFoundError:
+            logger.error(
+                "[HERMES_COMM][BIN_NOT_FOUND] Hermes二进制文件不存在 | bin=%s",
+                self.hermes_bin,
+            )
+            return {
+                "success": False,
+                "report": "",
+                "error": f"Hermes 可执行文件未找到 ({self.hermes_bin})，请确认已安装",
             }
 
         except Exception as e:
             process.kill()
             await process.wait()
+            logger.error(
+                "[HERMES_COMM][EXCEPTION] 子进程通信异常 | pid=%s exception=%s traceback=%s",
+                process.pid, str(e), traceback.format_exc(),
+            )
             return {
                 "success": False,
                 "report": "",
@@ -148,6 +196,10 @@ class HermesBridge:
 
         finally:
             shutil.rmtree(session_dir, ignore_errors=True)
+            logger.debug(
+                "[HERMES_COMM][CLEANUP] 临时目录已清理 | session=%s",
+                session_dir,
+            )
 
     def _parse_report(self, raw_output: str) -> str:
         """从 Hermes 输出中提取分析报告。

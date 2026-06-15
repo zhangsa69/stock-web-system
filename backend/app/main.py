@@ -4,6 +4,7 @@ FastAPI 应用入口
 启动: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 """
 
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,15 +12,25 @@ from .config import settings
 from .database import init_db, close_db
 from .api.router import router
 
+# ===== 全局日志配置 =====
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("stock-analysis")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期"""
-    # 启动时：初始化数据库表
+    logger.info("[SYSTEM] 正在初始化数据库...")
     await init_db()
+    logger.info("[SYSTEM] 应用启动完成")
     yield
-    # 关闭时：断开数据库连接
+    logger.info("[SYSTEM] 正在关闭...")
     await close_db()
+    logger.info("[SYSTEM] 应用已关闭")
 
 
 app = FastAPI(
