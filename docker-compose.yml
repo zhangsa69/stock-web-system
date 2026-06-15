@@ -1,0 +1,118 @@
+version: "3.8"
+
+services:
+  # ============ 反向代理 ============
+  nginx:
+    image: nginx:alpine
+    container_name: stock-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - stock-network
+
+  # ============ FastAPI 主服务 ============
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock-backend
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+    volumes:
+      # 映射 Hermes CLI 和配置
+      - /usr/local/bin/hermes:/usr/local/bin/hermes:ro
+      - /root/.hermes:/root/.hermes:ro
+      # PDF 缓存目录
+      - ./docker-data/pdf_cache:/app/pdf_cache
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - stock-network
+
+  # ============ Celery Worker ============
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock-celery-worker
+    command: celery -A app.tasks.celery_app worker --concurrency=4 --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+    volumes:
+      - /usr/local/bin/hermes:/usr/local/bin/hermes:ro
+      - /root/.hermes:/root/.hermes:ro
+      - ./docker-data/pdf_cache:/app/pdf_cache
+      - ./docker-data/hermes_sessions:/tmp/hermes_sessions
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - stock-network
+    deploy:
+      replicas: 2
+
+  # ============ PostgreSQL 数据库 ============
+  postgres:
+    image: postgres:15-alpine
+    container_name: stock-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stock_analysis}
+      POSTGRES_USER: ${POSTGRES_USER:-stock_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_please}
+    volumes:
+      - ./docker-data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stock_user} -d ${POSTGRES_DB:-stock_analysis}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - stock-network
+
+  # ============ Redis ============
+  redis:
+    image: redis:7-alpine
+    container_name: stock-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - ./docker-data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - stock-network
+
+networks:
+  stock-network:
+    driver: bridge
