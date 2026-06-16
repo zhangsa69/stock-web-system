@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from http.server import ThreadingHTTPServer
 
@@ -17,6 +18,8 @@ logger = logging.getLogger("hermes-cmd-server")
 HERMES_BIN = "/opt/hermes/.venv/bin/hermes"
 LISTEN_PORT = int(os.environ.get("CMD_SERVER_PORT", "9888"))
 ALLOWED_PREFIX = os.environ.get("CMD_SERVER_ALLOWED_PREFIX", "")
+MAX_CONCURRENT = int(os.environ.get("CMD_SERVER_MAX_CONCURRENT", "3"))
+_exec_semaphore = threading.Semaphore(MAX_CONCURRENT)
 
 class Handler(BaseHTTPRequestHandler):
     """处理 POST /exec 请求"""
@@ -52,9 +55,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._json_response({"success": False, "stdout": "", "stderr": "Command not allowed", "exit_code": -1}, 403)
                 return
 
-            logger.info("exec: %s (timeout=%ds)", command[:120], timeout)
+            logger.info("exec: %s (timeout=%ds, waiting=%d)", command[:120], timeout,
+                        MAX_CONCURRENT - _exec_semaphore._value)
 
             merged_env = {**os.environ, **env_vars}
+
+            acquired = _exec_semaphore.acquire(timeout=5)
+            if not acquired:
+                self._json_response({"success": False, "stdout": "", "stderr": "Server busy (max concurrent: %d)" % MAX_CONCURRENT, "exit_code": -1}, 503)
+                return
 
             try:
                 result = subprocess.run(
@@ -76,6 +85,8 @@ class Handler(BaseHTTPRequestHandler):
             except subprocess.TimeoutExpired:
                 logger.warning("timeout: after %ds", timeout)
                 self._json_response({"success": False, "stdout": "", "stderr": f"Timeout ({timeout}s)", "exit_code": -1})
+            finally:
+                _exec_semaphore.release()
 
         except json.JSONDecodeError:
             self.send_error(400, "Invalid JSON")
