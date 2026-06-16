@@ -30,6 +30,22 @@ async def get_current_user(
     return {"user_id": payload["sub"], "email": payload["email"]}
 
 
+async def get_current_admin(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """从 JWT 解析管理员。非管理员抛出 403。"""
+    user = await get_current_user(credentials, db)
+    from ..config import settings
+    admin_emails = [e.strip() for e in settings.admin_emails.split(",") if e.strip()]
+    if user["email"] not in admin_emails:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无管理员权限",
+        )
+    return user
+
+
 async def get_optional_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db),

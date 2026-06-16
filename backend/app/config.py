@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:80,http://localhost:3000"
 
+    # 管理员
+    admin_emails: str = "17832274061@163.com"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
