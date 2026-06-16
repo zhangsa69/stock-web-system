@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime, timezone, timedelta
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func, desc
@@ -77,8 +78,13 @@ class ImportResult(BaseModel):
 
 
 # ── Auth (验证码登录，无密码) ──
+# Redis 存储验证码（跨 worker 共享）
+ADMIN_CODE_PREFIX = "admin:code:"
+ADMIN_RATE_PREFIX = "admin:rate:"
 
-ADMIN_CODE_STORE: dict[str, tuple[str, datetime]] = {}  # email -> (code, expires)
+
+async def _get_redis():
+    return aioredis.from_url(settings.redis_url, decode_responses=True)
 
 
 @router.post("/send-code")
@@ -89,14 +95,21 @@ async def admin_send_code(req: AdminSendCodeRequest):
     if email not in admin_emails:
         raise HTTPException(status_code=403, detail="非管理员邮箱")
 
+    redis = await _get_redis()
+
     # 速率限制：60秒内只能发一次
-    if email in ADMIN_CODE_STORE:
-        _, last_sent = ADMIN_CODE_STORE[email]
-        if datetime.now(timezone.utc) - last_sent < timedelta(seconds=60):
-            raise HTTPException(status_code=429, detail="请60秒后再试")
+    rate_key = f"{ADMIN_RATE_PREFIX}{email}"
+    if await redis.exists(rate_key):
+        await redis.close()
+        raise HTTPException(status_code=429, detail="请60秒后再试")
 
     code = generate_verification_code()
-    ADMIN_CODE_STORE[email] = (code, datetime.now(timezone.utc))
+
+    # 存验证码到 Redis，10分钟过期
+    code_key = f"{ADMIN_CODE_PREFIX}{email}"
+    await redis.setex(code_key, 600, code)
+    await redis.setex(rate_key, 60, "1")
+    await redis.close()
 
     try:
         await EmailService.send_verification_code(email, code)
@@ -117,19 +130,21 @@ async def admin_login(req: AdminLoginRequest):
     if email not in admin_emails:
         raise HTTPException(status_code=403, detail="非管理员邮箱")
 
-    stored = ADMIN_CODE_STORE.get(email)
-    if not stored:
-        raise HTTPException(status_code=400, detail="请先发送验证码")
+    redis = await _get_redis()
+    code_key = f"{ADMIN_CODE_PREFIX}{email}"
+    stored_code = await redis.get(code_key)
 
-    stored_code, expires = stored
-    if datetime.now(timezone.utc) - expires > timedelta(minutes=10):
-        del ADMIN_CODE_STORE[email]
-        raise HTTPException(status_code=400, detail="验证码已过期")
+    if not stored_code:
+        await redis.close()
+        raise HTTPException(status_code=400, detail="验证码已过期或未发送，请重新发送")
 
     if stored_code != code:
+        await redis.close()
         raise HTTPException(status_code=400, detail="验证码错误")
 
-    del ADMIN_CODE_STORE[email]
+    # 验证成功，删除验证码
+    await redis.delete(code_key)
+    await redis.close()
 
     # 确保管理员用户存在于数据库中（无密码）
     # 复用现有 User 模型
