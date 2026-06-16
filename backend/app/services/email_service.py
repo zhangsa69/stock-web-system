@@ -97,13 +97,8 @@ class EmailService:
 
             # 附件：原始 .md 文件
             filename = f"{stock_code}_{stock_name}_分析报告.md"
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(report.encode("utf-8"))
-            encoders.encode_base64(part)
-            part.add_header(
-                "Content-Disposition",
-                f'attachment; filename="{filename}"',
-            )
+            part = MIMEText(report, "plain", "utf-8")
+            part.add_header("Content-Disposition", "attachment", filename=("utf-8", "", filename))
             msg.attach(part)
 
             logger.info("[EMAIL_SEND][MSG_BUILT] 附件构建完成 | to=%s file=%s", to_email, filename)

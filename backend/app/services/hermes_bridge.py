@@ -144,33 +144,27 @@ class HermesBridge:
         timeout: int | None = None,
     ) -> dict:
         """
-        两步流水线: 分析 → Html
-
-        Step 1: cninfo-financial-analysis 生成 Markdown
-        Step 2: md2html 转为精美 HTML
+        单步流水线: cninfo-financial-analysis 生成 Markdown → 直接返回
 
         Returns:
             {"success": bool, "report": str, "html_report": str, "error": str | None}
         """
         total_timeout = timeout or self.timeout
-
-        # ═══════ Step 1: 财报分析 → Markdown ═══════
-        step1_timeout = int(total_timeout * 0.85)
         md_path = f"/tmp/analysis_{stock_code}.md"
-        html_path = f"/tmp/analysis_{stock_code}.html"
 
-        prompt1 = (
+        # ═══════ 财报分析 → Markdown ═══════
+        prompt = (
             f"分析股票 {stock_code}。"
             f"按 cninfo-financial-analysis 流程完成完整分析"
             f"（下载财报、NotebookLM 分析、排雷、市场数据交叉验证）。"
             f"分析完成后，把完整报告用 write_file 写入 {md_path}。"
         )
-        logger.info("[BRIDGE][STEP1] 分析 | stock=%s timeout=%s", stock_code, step1_timeout)
-        result1 = await self._call_skill(prompt1, ["cninfo-financial-analysis"], step1_timeout, max_turns=50)
+        logger.info("[BRIDGE][STEP1] 分析 | stock=%s timeout=%s", stock_code, total_timeout)
+        result = await self._call_skill(prompt, ["cninfo-financial-analysis"], total_timeout, max_turns=50)
 
-        if not result1["success"]:
-            err = result1["stderr"] or result1["stdout"] or "Hermes Agent 执行失败"
-            logger.error("[BRIDGE][STEP1_FAIL] stock=%s err=%s", stock_code, err[:500])
+        if not result["success"]:
+            err = result["stderr"] or result["stdout"] or "Hermes Agent 执行失败"
+            logger.error("[BRIDGE][FAIL] stock=%s err=%s", stock_code, err[:500])
             return {"success": False, "report": "", "html_report": "", "error": f"分析失败: {err[:500]}"}
 
         # 从文件读取 — 不依赖 Agent 文本输出（可能被 diff 污染）
@@ -178,38 +172,19 @@ class HermesBridge:
         if read_md["success"] and read_md["stdout"].strip():
             markdown = read_md["stdout"]
         else:
-            # 兜底：用 Agent 文本输出
-            markdown = self._extract_agent_response(result1["stdout"])
+            markdown = self._extract_agent_response(result["stdout"])
             if not markdown:
-                markdown = result1["stdout"].strip()
+                markdown = result["stdout"].strip()
 
-        logger.info("[BRIDGE][STEP1_OK] stock=%s md_len=%d", stock_code, len(markdown))
-
-        # ═══════ Step 2: Markdown → HTML (md2html) ═══════
-        logger.info("[BRIDGE][STEP2] MD→HTML | stock=%s", stock_code)
-        step2_timeout = max(int(total_timeout * 0.25), 60)
-        prompt2 = f"/md2html {md_path} --out {html_path}"
-        result2 = await self._call_skill(prompt2, ["md2html"], step2_timeout, max_turns=10)
-
-        html_report = ""
-        if result2["success"]:
-            # 读取生成的 HTML
-            read_result = await self._docker_exec(f"cat {html_path}", timeout=10)
-            if read_result["success"]:
-                html_report = read_result["stdout"]
-                logger.info("[BRIDGE][STEP2_OK] stock=%s html_len=%d", stock_code, len(html_report))
-            else:
-                logger.warning("[BRIDGE][STEP2_READ_FAIL] 无法读取 HTML")
-        else:
-            logger.warning("[BRIDGE][STEP2_FAIL] md2html 失败: %s", result2.get("stderr", "")[:200])
+        logger.info("[BRIDGE][OK] stock=%s md_len=%d", stock_code, len(markdown))
 
         # 清理临时文件
-        await self._docker_exec(f"rm -f {md_path} {html_path}", timeout=5)
+        await self._docker_exec(f"rm -f {md_path}", timeout=5)
 
         return {
             "success": True,
             "report": markdown,
-            "html_report": html_report,
+            "html_report": "",
             "error": None,
         }
 
