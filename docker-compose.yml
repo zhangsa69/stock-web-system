@@ -94,7 +94,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: stock-redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - ./docker-data/redis:/data
     ports:

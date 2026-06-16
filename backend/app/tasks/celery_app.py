@@ -23,4 +23,5 @@ celery_app.conf.update(
     task_soft_time_limit=settings.hermes_timeout,
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=50,
+    result_expires=3600,  # 任务结果1小时后自动清除，防止Redis OOM
 )
