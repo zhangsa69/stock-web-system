@@ -36,6 +36,10 @@ COPY . .
 # 预创建数据目录
 RUN mkdir -p /app/pdf_cache /app/logs
 
+# 非 root 用户运行
+RUN useradd -m -u 1000 -s /bin/bash appuser && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8000
 
 # 默认启动 FastAPI

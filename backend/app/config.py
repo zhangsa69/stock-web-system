@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     hermes_timeout: int = 900
     hermes_max_workers: int = 4
     hermes_mock: bool = False  # Mock模式（开发调试用，生产环境设False）
+    hermes_api_url: str = "http://hermes-agent:9888/exec"  # HTTP API 地址
 
     # CNinfo → NotebookLM 流水线路径（宿主机路径，通过 docker exec 在 hermes-agent 容器内执行）
     cninfo_project_dir: str = "/opt/data/CNinfo2Notebookllm"

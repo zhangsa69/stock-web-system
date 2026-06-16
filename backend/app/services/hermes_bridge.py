@@ -1,73 +1,62 @@
 """
-Hermes 桥接层 — 通过 Hermes Agent CLI 调用完整 skill 链
+Hermes 桥接层 — 通过 HTTP API 调用 Hermes Agent CLI 执行完整 skill 链
+（替代 docker.sock 方案，安全隔离）
 
 两步流水线:
   1. cninfo-financial-analysis → Markdown 分析报告
-  2. md2html → 精美 HTML
+  2. 返回报告内容
 """
 import asyncio
-import base64
+import json
 import logging
 import re
 import shlex
-import traceback
+
+import httpx
+
 from ..config import settings
 
 logger = logging.getLogger("stock-analysis.hermes")
 
 
 class HermesBridge:
-    """通过 docker exec 调用 Hermes Agent CLI 执行 skill 链"""
+    """通过 HTTP API 调用 Hermes Agent 执行 skill 链"""
 
     def __init__(self):
         self.timeout = settings.hermes_timeout
-        self.container = getattr(settings, "hermes_container", "hermes-agent")
+        self.api_url = getattr(settings, "hermes_api_url", "http://hermes-agent:9888/exec")
         self.hermes_bin = "/opt/hermes/.venv/bin/hermes"
 
-    async def _docker_exec(self, command: str, timeout: int, env: dict | None = None) -> dict:
-        """在 hermes-agent 容器内执行命令"""
-        env_args = []
+    async def _http_exec(self, command: str, timeout: int, env: dict | None = None) -> dict:
+        """通过 HTTP POST 在 hermes-agent 容器内执行命令"""
+        payload = {"command": command, "timeout": timeout}
         if env:
-            for k, v in env.items():
-                env_args.extend(["-e", f"{k}={v}"])
+            payload["env"] = env
 
-        cmd = ["docker", "exec", *env_args, self.container, "bash", "-c", command]
-        logger.info("[BRIDGE][EXEC] %s", " ".join(cmd))
-
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        logger.info("[BRIDGE][PROC] pid=%s", process.pid)
+        logger.info("[BRIDGE][HTTP_EXEC] %s", command[:150])
 
         try:
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=timeout
-            )
-            stdout_text = stdout.decode("utf-8", errors="replace")
-            stderr_text = stderr.decode("utf-8", errors="replace")
+            async with httpx.AsyncClient(timeout=httpx.Timeout(timeout + 30)) as client:
+                response = await client.post(self.api_url, json=payload)
+                response.raise_for_status()
+                result = response.json()
 
             logger.info(
-                "[BRIDGE][DONE] pid=%s rc=%s stdout=%d stderr=%d",
-                process.pid, process.returncode, len(stdout_text), len(stderr_text),
+                "[BRIDGE][DONE] rc=%s stdout=%d stderr=%d",
+                result.get("exit_code"), len(result.get("stdout", "")), len(result.get("stderr", "")),
             )
             return {
-                "success": process.returncode == 0,
-                "stdout": stdout_text,
-                "stderr": stderr_text,
-                "exit_code": process.returncode,
+                "success": result.get("success", False),
+                "stdout": result.get("stdout", ""),
+                "stderr": result.get("stderr", ""),
+                "exit_code": result.get("exit_code", -1),
             }
-        except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
-            logger.error("[BRIDGE][TIMEOUT] pid=%s timeout=%ds", process.pid, timeout)
+        except httpx.TimeoutException:
+            logger.error("[BRIDGE][TIMEOUT] timeout=%ds", timeout)
             return {"success": False, "stdout": "", "stderr": f"超时（{timeout}秒）", "exit_code": -1}
-        except Exception:
-            process.kill()
-            await process.wait()
-            logger.error("[BRIDGE][EXCEPTION] %s", traceback.format_exc())
-            return {"success": False, "stdout": "", "stderr": "内部异常", "exit_code": -1}
+        except Exception as e:
+            logger.error("[BRIDGE][HTTP_FAIL] %s", str(e))
+            return {"success": False, "stdout": "", "stderr": f"连接失败: {str(e)}", "exit_code": -1}
 
     def _extract_agent_response(self, raw: str) -> str:
         """从 hermes chat -Q 输出中提取最终回复（去掉 session info 和 diff artifacts）"""
@@ -135,7 +124,7 @@ class HermesBridge:
             f"--max-turns {max_turns}"
         )
         logger.info("[BRIDGE][SKILL_CALL] skills=%s timeout=%s", skills, timeout)
-        return await self._docker_exec(cmd, timeout=timeout)
+        return await self._http_exec(cmd, timeout=timeout)
 
     async def run_skill(
         self,
@@ -168,7 +157,7 @@ class HermesBridge:
             return {"success": False, "report": "", "html_report": "", "error": f"分析失败: {err[:500]}"}
 
         # 从文件读取 — 不依赖 Agent 文本输出（可能被 diff 污染）
-        read_md = await self._docker_exec(f"cat {md_path}", timeout=10)
+        read_md = await self._http_exec(f"cat {md_path}", timeout=10)
         if read_md["success"] and read_md["stdout"].strip():
             markdown = read_md["stdout"]
         else:
@@ -179,7 +168,7 @@ class HermesBridge:
         logger.info("[BRIDGE][OK] stock=%s md_len=%d", stock_code, len(markdown))
 
         # 清理临时文件
-        await self._docker_exec(f"rm -f {md_path}", timeout=5)
+        await self._http_exec(f"rm -f {md_path}", timeout=5)
 
         return {
             "success": True,
