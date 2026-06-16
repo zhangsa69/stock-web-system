@@ -35,6 +35,7 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     """创建所有表（开发用，生产用 Alembic）"""
+    from .models import AnalysisTask, User  # noqa: F401 — 确保所有模型被导入
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # 为已存在的表添加 user_email 列（幂等）

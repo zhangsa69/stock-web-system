@@ -15,6 +15,47 @@ logger = logging.getLogger("stock-analysis.email")
 class EmailService:
     """SMTP 邮件服务"""
 
+    @staticmethod
+    async def send_verification_code(to_email: str, code: str) -> bool:
+        """发送邮箱验证码"""
+        if not settings.smtp_host or not settings.smtp_user:
+            logger.error("[EMAIL_VERIFY] SMTP未配置")
+            return False
+
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["From"] = settings.smtp_from
+            msg["To"] = to_email
+            msg["Subject"] = "【AI股票分析】邮箱验证码"
+
+            html_body = f"""\
+<html><body style="font-family: Arial, sans-serif; padding: 20px;">
+  <h2 style="color: #D4A843;">AI 股票财报分析平台</h2>
+  <p>您的验证码是：</p>
+  <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px;
+              color: #0A1929; background: #F0C060; display: inline-block;
+              padding: 12px 24px; border-radius: 8px; margin: 16px 0;">
+    {code}
+  </div>
+  <p style="color: #666; margin-top: 20px;">验证码 10 分钟内有效，请勿泄露。</p>
+</body></html>"""
+            msg.attach(MIMEText(f"您的验证码是：{code}，10分钟内有效。", "plain", "utf-8"))
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+            server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
+            if settings.smtp_use_tls:
+                server.starttls()
+            server.login(settings.smtp_user, settings.smtp_password)
+            server.sendmail(settings.smtp_from, to_email, msg.as_string())
+            server.quit()
+
+            logger.info("[EMAIL_VERIFY] 验证码已发送: %s", to_email)
+            return True
+
+        except Exception as e:
+            logger.error("[EMAIL_VERIFY] 发送失败: %s reason=%s", to_email, str(e))
+            return False
+
     def send_report_email(
         self,
         to_email: str,

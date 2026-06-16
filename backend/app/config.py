@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     # 任务缓存（天）
     analysis_cache_days: int = 7
 
+    # JWT
+    jwt_secret: str = "change-me-jwt-secret-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_days: int = 7
+
     # SMTP 邮件
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587

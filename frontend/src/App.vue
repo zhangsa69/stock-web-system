@@ -1,6 +1,16 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import AppHeader from "./components/layout/AppHeader.vue";
 import AppFooter from "./components/layout/AppFooter.vue";
+import { useAuthStore } from "./stores/auth";
+
+const auth = useAuthStore();
+
+onMounted(async () => {
+  if (auth.isLoggedIn) {
+    await auth.fetchUser();
+  }
+});
 </script>
 
 <template>
