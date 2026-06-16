@@ -34,6 +34,6 @@ docker-data/
 *.log
 logs/
 
-# Temp
-tmp/
-temp/
+# SSL 证书（私钥不上传 Github）
+nginx/ssl/*.key
+nginx/ssl/*.crt
