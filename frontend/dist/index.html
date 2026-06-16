@@ -1224,7 +1224,8 @@ a:hover { text-decoration: underline; }
   .comparison-table th,
   .comparison-table td { padding: 8px 10px; font-size: 12px; }
   .comparison-table th:first-child,
-  .comparison-table td:first-child { min-width: 90px; }
+  .comparison-table td:first-child { min-width: 80px; }
+  .comparison-table th, .comparison-table td { font-size: 11px; }
 
   /* Sections */
   .section { padding: 48px 16px; }
@@ -1352,9 +1353,7 @@ a:hover { text-decoration: underline; }
   <div class="section section-features">
     <div class="container">
       <div class="features-header fade-in">
-        <span class="features-eyebrow">核心技术</span>
-        <h2 class="features-headline">财报分析，</h2>
-        <h2 class="features-headline gradient-text">重新定义。</h2>
+        <h2 class="features-headline gradient-text">深度求索 极限分析</h2>
         <p class="features-subhead">从数据采集到投资决策，全链路 AI 驱动。不再需要翻阅数百页财报，几分钟内获得机构级分析报告。</p>
       </div>
 
@@ -1390,7 +1389,7 @@ a:hover { text-decoration: underline; }
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
           <h3>专业投资报告</h3>
-          <p>分析完成后自动生成结构化 PDF 报告，包含执行摘要、财务全景、估值分析、风险提示、投资建议等章节。报告直达邮箱，支持历史回溯与下载，随时随地查阅，让你的研究有据可依。</p>
+          <p>分析完成后自动生成结构化报表，包含执行摘要、财务全景、估值分析、风险提示、投资建议等章节。报告直达邮箱，支持历史回溯与下载，随时随地查阅，让你的研究有据可依。</p>
           <ul class="feature-tags">
             <li>自动生成</li><li>邮件直达</li><li>历史回溯</li>
           </ul>
@@ -1400,7 +1399,6 @@ a:hover { text-decoration: underline; }
       <!-- How It Works -->
       <div class="how-it-works fade-in">
         <div class="features-header" style="margin-top:0;">
-          <span class="features-eyebrow">工作原理</span>
           <h2 class="features-headline" style="font-size:36px;">从代码到报告</h2>
           <p class="features-subhead">四个步骤，数分钟完成传统分析师数小时的工作</p>
         </div>
@@ -1436,47 +1434,48 @@ a:hover { text-decoration: underline; }
   <!-- Comparison Table -->
   <div class="section" id="pricingSection">
     <div class="container">
-      <h2 class="section-title">为什么收费？</h2>
-      <p class="section-subtitle">AI分析需要消耗计算资源，我们提供透明的服务对比</p>
+      <h2 class="section-title">系统优势</h2>
+      <p class="section-subtitle">对比传统方式，元基财报分析引擎全面领先</p>
       <div style="overflow-x: auto;">
-        <table class="comparison-table">
+<table class="comparison-table">
           <thead>
             <tr>
-              <th>功能</th>
-              <th>免费方案</th>
+              <th>对比维度</th>
+              <th>人工分析</th>
+              <th>免费大模型</th>
               <th class="col-highlight">元基财报分析引擎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>财报数据获取</td>
-              <td>手动搜索，信息零散</td>
-              <td class="col-highlight"><span class="check">✓</span> 自动聚合</td>
+              <td>数据获取</td>
+              <td>需手动查找近五年财报，累计阅读数十万至百万字，极其耗时且容易遗漏</td>
+              <td>不支持超长文本（百万字级）上传与分析，一次只能分析数百字片段</td>
+              <td class="col-highlight"><span class="check">✓</span> 自动拉取近五年财报全文，支持百万字深度阅读与分析</td>
             </tr>
             <tr>
-              <td>分析深度</td>
-              <td>表面数字，无深度解读</td>
-              <td class="col-highlight"><span class="check">✓</span> AI多维深度分析</td>
+              <td>分析深度与耗时</td>
+              <td>分析浅显，依赖个人经验判断，无法系统化覆盖多维指标</td>
+              <td>数十秒快速出报告，但仅能处理摘要级信息，缺乏深度交叉验证</td>
+              <td class="col-highlight"><span class="check">✓</span> 深度挖掘十余分钟，覆盖22项财务维度，交叉验证逻辑一致性</td>
             </tr>
             <tr>
-              <td>分析时间</td>
-              <td>数小时人工查阅</td>
-              <td class="col-highlight"><span class="check">✓</span> 数分钟自动完成</td>
+              <td>报告输出</td>
+              <td>需自行整理零散信息，格式不统一，难以复用</td>
+              <td>简单文本摘要，无结构化分析框架</td>
+              <td class="col-highlight"><span class="check">✓</span> 结构化专业报告，含执行摘要、估值分析、风险提示等完整章节</td>
             </tr>
             <tr>
-              <td>报告生成</td>
-              <td>需自行整理</td>
-              <td class="col-highlight"><span class="check">✓</span> 结构化报告一键导出</td>
-            </tr>
-            <tr>
-              <td>数据时效性</td>
-              <td>难以追踪更新</td>
-              <td class="col-highlight"><span class="check">✓</span> 实时获取最新财报</td>
+              <td>时效性</td>
+              <td>难以持续追踪，每次更新需重新查阅</td>
+              <td>无法自动追踪最新财报发布</td>
+              <td class="col-highlight"><span class="check">✓</span> 实时对接数据源，第一时间获取最新季报/年报</td>
             </tr>
             <tr>
               <td>成本</td>
-              <td>时间成本极高</td>
-              <td class="col-highlight"><span class="check">✓</span> 低至每次1元</td>
+              <td>时间成本极高，单只股票需数小时</td>
+              <td>免费但分析质量低，无法支撑投资决策</td>
+              <td class="col-highlight"><span class="check">✓</span> 单次仅需1点券（¥1），机构级分析，物超所值</td>
             </tr>
           </tbody>
         </table>
