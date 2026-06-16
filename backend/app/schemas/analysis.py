@@ -6,7 +6,7 @@ from typing import Optional
 class AnalysisRequest(BaseModel):
     stock_code: str = Field(..., min_length=1, max_length=20, description="股票代码，如 600519")
     skill_name: str = Field(default="cninfo-financial-analysis", description="Hermes skill 名称")
-    email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$", description="接收报告的邮箱")
+    email: str = Field(default="", description="接收报告的邮箱（从JWT自动获取，可留空）")
 
 
 class AnalysisResponse(BaseModel):

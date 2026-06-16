@@ -1,10 +1,10 @@
 """
 分析 API 路由
 """
-
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..schemas.analysis import (
@@ -15,6 +15,8 @@ from ..schemas.analysis import (
 )
 from ..services.analysis_service import AnalysisService
 from ..models.analysis import TaskStatus
+from ..models.user import User
+from ..utils.auth import get_current_user, get_optional_user
 
 logger = logging.getLogger("stock-analysis.api")
 router = APIRouter()
@@ -24,13 +26,24 @@ router = APIRouter()
 async def start_analysis(
     req: AnalysisRequest,
     db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
     """提交股票分析任务"""
+    email = user["email"]
     logger.info(
-        "[ANALYSIS][START] 收到分析请求 | stock_code=%s skill=%s email=%s",
-        req.stock_code, req.skill_name, req.email,
+        "[ANALYSIS][START] 收到分析请求 | stock_code=%s skill=%s user=%s",
+        req.stock_code, req.skill_name, email,
     )
     service = AnalysisService(db)
+
+    # ── 查询用户点券余额 ──
+    user_stmt = select(User).where(User.email == email)
+    user_result = await db.execute(user_stmt)
+    u = user_result.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    if u.tickets <= 0:
+        raise HTTPException(status_code=402, detail="点券余额不足，请先充值（每次分析消耗 1 点券）")
 
     # 检查缓存
     cached = await service.get_cached_task(req.stock_code, req.skill_name)
@@ -49,7 +62,7 @@ async def start_analysis(
     task = await service.create_task(
         stock_code=req.stock_code,
         skill_name=req.skill_name,
-        user_email=req.email,
+        user_email=email,
     )
     logger.info(
         "[ANALYSIS][TASK_CREATED] 任务已创建 | task_id=%s stock_code=%s",
@@ -79,6 +92,11 @@ async def start_analysis(
             error=f"任务调度失败: {str(e)}",
         )
         raise HTTPException(status_code=500, detail="分析任务调度失败，请稍后重试")
+
+    # ── 扣除 1 点券 ──
+    u.tickets -= 1
+    await db.flush()
+    logger.info("[ANALYSIS][DEDUCT] 扣除点券 | user=%s balance=%d", email, u.tickets)
 
     await service.update_task_status(
         task_id=task.id,

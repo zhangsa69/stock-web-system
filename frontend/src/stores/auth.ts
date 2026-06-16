@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import * as authApi from "../api/auth";
+import * as rechargeApi from "../api/recharge";
 import client from "../api/client";
 
 export const useAuthStore = defineStore("auth", () => {
   const token = ref<string | null>(localStorage.getItem("auth_token"));
   const user = ref<authApi.UserInfo | null>(null);
+  const balance = ref(0);
   const loading = ref(false);
 
   const isLoggedIn = computed(() => !!token.value);
@@ -59,14 +61,26 @@ export const useAuthStore = defineStore("auth", () => {
     if (!token.value) return;
     try {
       user.value = await authApi.getMe();
+      balance.value = user.value?.tickets ?? 0;
     } catch {
       logout();
+    }
+  }
+
+  async function fetchBalance() {
+    if (!token.value) return;
+    try {
+      const res = await rechargeApi.getBalance();
+      balance.value = res.tickets;
+    } catch {
+      // 静默失败
     }
   }
 
   function logout() {
     token.value = null;
     user.value = null;
+    balance.value = 0;
     localStorage.removeItem("auth_token");
     delete client.defaults.headers.common["Authorization"];
   }
@@ -74,12 +88,14 @@ export const useAuthStore = defineStore("auth", () => {
   return {
     token,
     user,
+    balance,
     loading,
     isLoggedIn,
     doRegister,
     doVerify,
     doLogin,
     fetchUser,
+    fetchBalance,
     logout,
   };
 });

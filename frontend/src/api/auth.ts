@@ -25,6 +25,7 @@ export interface UserInfo {
   email: string;
   is_verified: boolean;
   created_at: string;
+  tickets: number;
 }
 
 /** 注册 — 发送验证码 */

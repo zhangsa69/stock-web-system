@@ -24,3 +24,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    tickets: Mapped[int] = mapped_column(default=0, server_default="0")
+
+    def __repr__(self):
+        return f"<User {self.email} tickets={self.tickets}>"

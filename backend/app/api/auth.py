@@ -62,5 +62,6 @@ async def get_me(
         id=u.id,
         email=u.email,
         is_verified=u.is_verified,
+        tickets=u.tickets,
         created_at=u.created_at.isoformat(),
     )

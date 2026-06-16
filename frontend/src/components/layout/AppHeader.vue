@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
-import { LineChart, LogOut, User } from "lucide-vue-next";
+import { LineChart, LogOut, User, Coins } from "lucide-vue-next";
 
 const router = useRouter();
 const auth = useAuthStore();
+
+onMounted(async () => {
+  if (auth.isLoggedIn) {
+    await auth.fetchBalance();
+  }
+});
 </script>
 
 <template>
@@ -42,6 +49,10 @@ const auth = useAuthStore();
         </router-link>
         <!-- 用户菜单 -->
         <div class="flex items-center gap-2 ml-4 pl-4 border-l border-white/10">
+          <span class="flex items-center gap-1 px-2 py-1 bg-[#D4A843]/10 border border-[#D4A843]/30 rounded-lg">
+            <Coins :size="14" class="text-[#F0C060]" />
+            <span class="text-xs font-mono font-bold text-[#F0C060]">{{ auth.balance }}</span>
+          </span>
           <User :size="16" class="text-[#8B9CB5]" />
           <span class="text-sm text-[#8B9CB5] max-w-[160px] truncate">{{ auth.user?.email }}</span>
           <button

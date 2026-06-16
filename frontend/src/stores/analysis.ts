@@ -8,7 +8,7 @@ export const useAnalysisStore = defineStore("analysis", () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  async function startAnalysis(stockCode: string, email: string) {
+  async function startAnalysis(stockCode: string, email: string = "") {
     isLoading.value = true;
     error.value = null;
     const result = await analysisApi.start(stockCode, email);

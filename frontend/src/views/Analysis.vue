@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { useAuthStore } from "../stores/auth";
 import { useAnalysisStore } from "../stores/analysis";
 import AnalysisProgress from "../components/analysis/AnalysisProgress.vue";
 import { Search, Loader2, CheckCircle } from "lucide-vue-next";
 
 const route = useRoute();
 const store = useAnalysisStore();
+const auth = useAuthStore();
 const stockCode = ref("");
-const userEmail = ref("");
+const didAutoStart = ref(false);
 
 onMounted(() => {
   const taskId = route.params.taskId as string | undefined;
@@ -18,33 +20,30 @@ onMounted(() => {
   }
   if (route.query.code) {
     stockCode.value = route.query.code as string;
-    userEmail.value = (route.query.email as string) || "";
-    if (userEmail.value) {
-      store.startAnalysis(route.query.code as string, userEmail.value);
-    }
+    autoStart((route.query.code as string));
   }
 });
 
 watch(
-  () => [route.query.code, route.query.email],
-  ([newCode, newEmail]) => {
-    if (newCode) {
+  () => route.query.code,
+  (newCode) => {
+    if (newCode && !didAutoStart.value) {
       stockCode.value = newCode as string;
-      userEmail.value = (newEmail as string) || "";
-      store.reset();
-      if (userEmail.value) {
-        store.startAnalysis(newCode as string, userEmail.value);
-      }
+      autoStart(newCode as string);
     }
   }
 );
 
+function autoStart(code: string) {
+  didAutoStart.value = true;
+  store.startAnalysis(code, auth.user?.email || "");
+}
+
 function handleSubmit() {
   const code = stockCode.value.trim();
-  const email = userEmail.value.trim();
-  if (!code || !email) return;
+  if (!code) return;
   store.reset();
-  store.startAnalysis(code, email);
+  store.startAnalysis(code, auth.user?.email || "");
 }
 </script>
 
@@ -66,22 +65,16 @@ function handleSubmit() {
         />
         <button
           @click="handleSubmit"
-          :disabled="!stockCode.trim() || !userEmail.trim() || store.isLoading"
+          :disabled="!stockCode.trim() || store.isLoading"
           class="px-6 py-2.5 bg-gradient-to-r from-[#D4A843] to-[#F0C060] text-[#0A1929] font-semibold rounded-lg hover:opacity-90 disabled:opacity-40 transition-opacity flex items-center gap-2"
         >
           <Loader2 v-if="store.isLoading" :size="16" class="animate-spin" />
           {{ store.isLoading ? "分析中..." : "开始分析" }}
         </button>
       </div>
-      <div class="mt-3">
-        <input
-          v-model="userEmail"
-          type="email"
-          placeholder="输入您的邮箱（必填，分析完成后发送报告）"
-          class="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-[#5C6E8A] text-sm focus:border-[#D4A843] outline-none transition-colors"
-          @keyup.enter="handleSubmit"
-        />
-      </div>
+      <p class="text-xs text-[#5C6E8A] mt-2">
+        报告将发送至 <span class="text-[#F0C060]">{{ auth.user?.email }}</span>
+      </p>
     </div>
 
     <!-- 进度 -->
@@ -110,12 +103,12 @@ function handleSubmit() {
       class="bg-green-500/10 border border-green-500/30 rounded-2xl p-10 text-center animate-slide-up"
     >
       <CheckCircle :size="48" class="mx-auto mb-4 text-green-400" />
-      <h3 class="text-xl font-bold text-[#E8EDF5] mb-2">分析完成</h3>
+      <h3 class="text-xl font-bold text-[#E8EDF5] mb-2">✅ 分析完成</h3>
       <p class="text-[#8B9CB5] mb-1">
         {{ store.currentStatus.stock_name || store.currentStatus.stock_code }} 报告已生成
       </p>
       <p class="text-sm text-[#5C6E8A]">
-        报告已发送至 <span class="text-[#F0C060]">{{ userEmail || '您的邮箱' }}</span>，请在历史记录中下载原始 .md 文件
+        报告已发送至 <span class="text-[#F0C060]">{{ auth.user?.email || '您的邮箱' }}</span>，请在历史记录中下载原始 .md 文件
       </p>
     </div>
 

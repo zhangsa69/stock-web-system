@@ -27,6 +27,7 @@ class UserInfo(BaseModel):
     email: str
     is_verified: bool
     created_at: str
+    tickets: int = 0
 
     class Config:
         from_attributes = True
