@@ -4,6 +4,7 @@
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..schemas.analysis import (
@@ -146,6 +147,29 @@ async def get_analysis_history(
             for item in items
         ],
     }
+
+
+@router.get("/analysis/{task_id}/download")
+async def download_report(
+    task_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """下载原始 Markdown 报告"""
+    service = AnalysisService(db)
+    task = await service.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    if task.status != TaskStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="分析尚未完成")
+    if not task.report:
+        raise HTTPException(status_code=404, detail="报告内容为空")
+
+    filename = f"{task.stock_code}_{task.stock_name or task.stock_code}_分析报告.md"
+    return Response(
+        content=task.report.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/health")

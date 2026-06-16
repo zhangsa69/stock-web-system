@@ -3,8 +3,7 @@ import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useAnalysisStore } from "../stores/analysis";
 import AnalysisProgress from "../components/analysis/AnalysisProgress.vue";
-import AnalysisReport from "../components/analysis/AnalysisReport.vue";
-import { Search, Loader2 } from "lucide-vue-next";
+import { Search, Loader2, CheckCircle } from "lucide-vue-next";
 
 const route = useRoute();
 const store = useAnalysisStore();
@@ -12,13 +11,11 @@ const stockCode = ref("");
 const userEmail = ref("");
 
 onMounted(() => {
-  // 从历史页面跳转：/analysis/:taskId
   const taskId = route.params.taskId as string | undefined;
   if (taskId) {
     store.fetchStatus(taskId);
     return;
   }
-  // 带参数跳转：/analysis?code=xxx&email=xxx
   if (route.query.code) {
     stockCode.value = route.query.code as string;
     userEmail.value = (route.query.email as string) || "";
@@ -76,7 +73,6 @@ function handleSubmit() {
           {{ store.isLoading ? "分析中..." : "开始分析" }}
         </button>
       </div>
-      <!-- 邮箱输入框 -->
       <div class="mt-3">
         <input
           v-model="userEmail"
@@ -88,13 +84,13 @@ function handleSubmit() {
       </div>
     </div>
 
-    <!-- 进度区域 -->
+    <!-- 进度 -->
     <AnalysisProgress
       v-if="store.currentStatus && (store.currentStatus.status === 'pending' || store.currentStatus.status === 'running')"
       :status="store.currentStatus"
     />
 
-    <!-- 错误信息 -->
+    <!-- 错误 -->
     <div
       v-if="store.error"
       class="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center"
@@ -108,14 +104,20 @@ function handleSubmit() {
       </button>
     </div>
 
-    <!-- 分析报告 -->
-    <AnalysisReport
-      v-if="store.currentStatus?.status === 'completed' && store.currentStatus?.report"
-      :report="store.currentStatus.report"
-      :html-report="store.currentStatus.html_report"
-      :stock-code="store.currentStatus.stock_code"
-      :stock-name="store.currentStatus.stock_name || store.currentStatus.stock_code"
-    />
+    <!-- 分析完成 -->
+    <div
+      v-if="store.currentStatus?.status === 'completed'"
+      class="bg-green-500/10 border border-green-500/30 rounded-2xl p-10 text-center animate-slide-up"
+    >
+      <CheckCircle :size="48" class="mx-auto mb-4 text-green-400" />
+      <h3 class="text-xl font-bold text-[#E8EDF5] mb-2">分析完成</h3>
+      <p class="text-[#8B9CB5] mb-1">
+        {{ store.currentStatus.stock_name || store.currentStatus.stock_code }} 报告已生成
+      </p>
+      <p class="text-sm text-[#5C6E8A]">
+        报告已发送至 <span class="text-[#F0C060]">{{ userEmail || '您的邮箱' }}</span>，请在历史记录中下载原始 .md 文件
+      </p>
+    </div>
 
     <!-- 空状态 -->
     <div

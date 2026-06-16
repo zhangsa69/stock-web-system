@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { analysisApi, type HistoryItem } from "../api/analysis";
-import { Clock, TrendingUp } from "lucide-vue-next";
+import { Clock, TrendingUp, Download } from "lucide-vue-next";
 
 const router = useRouter();
 const items = ref<HistoryItem[]>([]);
@@ -19,6 +19,22 @@ const statusMap: Record<string, { text: string; color: string }> = {
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleString("zh-CN");
+}
+
+async function handleDownload(taskId: string, stockCode: string) {
+  try {
+    const response = await fetch(`/api/analysis/${taskId}/download`);
+    if (!response.ok) throw new Error("下载失败");
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${stockCode}_分析报告.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error("下载失败", e);
+  }
 }
 
 async function loadHistory() {
@@ -39,7 +55,6 @@ onMounted(loadHistory);
       <h2 class="text-2xl font-bold text-[#E8EDF5]">分析历史</h2>
     </div>
 
-    <!-- 表格 -->
     <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full">
@@ -67,13 +82,13 @@ onMounted(loadHistory);
               </td>
               <td class="px-6 py-4 text-xs text-[#5C6E8A]">{{ formatTime(item.created_at) }}</td>
               <td class="px-6 py-4 text-right">
-                <router-link
+                <button
                   v-if="item.status === 'completed'"
-                  :to="`/analysis/${item.task_id}`"
-                  class="text-xs text-[#D4A843] hover:text-[#F0C060] transition-colors"
+                  @click="handleDownload(item.task_id, item.stock_code)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#D4A843] hover:text-[#F0C060] hover:bg-white/5 rounded-lg transition-colors"
                 >
-                  查看报告
-                </router-link>
+                  <Download :size="14" />下载 .md
+                </button>
                 <span v-else class="text-xs text-[#5C6E8A]">-</span>
               </td>
             </tr>
@@ -81,7 +96,6 @@ onMounted(loadHistory);
         </table>
       </div>
 
-      <!-- 空状态 -->
       <div v-if="!loading && items.length === 0" class="text-center py-16">
         <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
           <TrendingUp :size="24" class="text-[#5C6E8A]" />
