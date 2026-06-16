@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
 
     # CORS
-    cors_origins: str = "http://localhost:5173,http://localhost:80,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://localhost:80,http://localhost:3000,http://66.63.162.26"
 
     # 管理员
     admin_emails: str = "17832274061@163.com"

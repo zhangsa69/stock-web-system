@@ -24,4 +24,5 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=50,
     result_expires=3600,  # 任务结果1小时后自动清除，防止Redis OOM
+    task_queue_max_length=100,  # 队列最深100个任务，防止无限堆积
 )

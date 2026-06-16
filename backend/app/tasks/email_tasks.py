@@ -1,11 +1,10 @@
 """
-发送分析结果邮件（同步方式，避免 event loop 冲突）
+发送分析结果邮件（同步方式）
 """
 import logging
 import traceback
 from .celery_app import celery_app
 from ..services.email_service import email_service
-from ..database import engine
 from ..models.analysis import AnalysisTask
 
 logger = logging.getLogger("stock-analysis.email_task")
@@ -13,19 +12,19 @@ logger = logging.getLogger("stock-analysis.email_task")
 
 @celery_app.task(bind=True, max_retries=2, default_retry_delay=60)
 def send_analysis_email(self, task_id: str):
-    """分析完成后发送结果邮件（同步 DB 查询 + 同步 SMTP）"""
+    """分析完成后发送结果邮件"""
     logger.info(
         "[EMAIL_SEND][TASK_START] Celery邮件任务启动 | task_id=%s celery_id=%s",
         task_id, self.request.id,
     )
 
+    sync_engine = None
     try:
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
         from ..config import settings
 
-        sync_url = settings.database_url_sync
-        sync_engine = create_engine(sync_url, pool_pre_ping=True)
+        sync_engine = create_engine(settings.database_url_sync, pool_pre_ping=True)
         SyncSession = sessionmaker(bind=sync_engine)
 
         with SyncSession() as db:
@@ -53,11 +52,9 @@ def send_analysis_email(self, task_id: str):
                 stock_code=task.stock_code,
                 stock_name=task.stock_name or task.stock_code,
                 report=task.report,
-                html_report=task.html_report,
+                html_report=task.html_report or "",
             )
             logger.info("[EMAIL_SEND][SUCCESS] task_id=%s", task_id)
-
-        sync_engine.dispose()
 
     except Exception as e:
         logger.error(
@@ -68,5 +65,8 @@ def send_analysis_email(self, task_id: str):
             raise self.retry(exc=e)
         else:
             logger.error("[EMAIL_SEND][MAX_RETRIES] task_id=%s", task_id)
+    finally:
+        if sync_engine:
+            sync_engine.dispose()
 
     logger.info("[EMAIL_SEND][TASK_END] task_id=%s", task_id)

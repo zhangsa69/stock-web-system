@@ -38,8 +38,8 @@ app = FastAPI(
     description="基于 Hermes Agent 的 A 股/港股财报 AI 分析服务",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.app_debug else None,
-    redoc_url="/redoc" if settings.app_debug else None,
+    docs_url=None,  # 生产环境关闭 API 文档
+    redoc_url=None,
 )
 
 # CORS 配置

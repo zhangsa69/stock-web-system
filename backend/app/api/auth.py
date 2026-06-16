@@ -1,8 +1,11 @@
 """认证 API 路由：注册、验证、登录、个人信息"""
 import logging
+
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..config import settings
 from ..database import get_db
 from ..schemas.auth import (
     RegisterRequest,
@@ -18,9 +21,23 @@ logger = logging.getLogger("stock-analysis.api.auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+async def _check_register_rate(email: str):
+    """注册验证码频率限制：同一邮箱 60 秒内只能发 1 次，同一 IP 每分钟 3 次"""
+    redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        email_key = f"rate:register:email:{email}"
+        if await redis.exists(email_key):
+            await redis.close()
+            raise HTTPException(status_code=429, detail="验证码发送过于频繁，请60秒后再试")
+        await redis.setex(email_key, 60, "1")
+    finally:
+        await redis.close()
+
+
 @router.post("/register")
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """用户注册 — 发送邮箱验证码"""
+    await _check_register_rate(req.email)
     service = AuthService(db)
     ok, msg = await service.register(req.email, req.password)
     if not ok:

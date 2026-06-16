@@ -1,17 +1,33 @@
 """
 邮件发送服务
-使用 smtplib 发送 .md 分析报告附件
+使用 smtplib + asyncio.to_thread 避免阻塞事件循环
 """
+import asyncio
 import smtplib
 import logging
 import traceback
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 from ..config import settings
 
 logger = logging.getLogger("stock-analysis.email")
+
+
+def _send_sync(msg: MIMEMultipart) -> None:
+    """同步 SMTP 发送（在 thread 中执行）"""
+    server = None
+    try:
+        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
+        if settings.smtp_use_tls:
+            server.starttls()
+        server.login(settings.smtp_user, settings.smtp_password)
+        server.sendmail(settings.smtp_from, msg["To"], msg.as_string())
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
 
 
 class EmailService:
@@ -19,7 +35,7 @@ class EmailService:
 
     @staticmethod
     async def send_verification_code(to_email: str, code: str) -> bool:
-        """发送邮箱验证码"""
+        """发送邮箱验证码（异步，不阻塞事件循环）"""
         if not settings.smtp_host or not settings.smtp_user:
             logger.error("[EMAIL_VERIFY] SMTP未配置")
             return False
@@ -44,12 +60,8 @@ class EmailService:
             msg.attach(MIMEText(f"您的验证码是：{code}，10分钟内有效。", "plain", "utf-8"))
             msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-            server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
-            if settings.smtp_use_tls:
-                server.starttls()
-            server.login(settings.smtp_user, settings.smtp_password)
-            server.sendmail(settings.smtp_from, to_email, msg.as_string())
-            server.quit()
+            # 在独立线程中发送，不阻塞事件循环
+            await asyncio.to_thread(_send_sync, msg)
 
             logger.info("[EMAIL_VERIFY] 验证码已发送: %s", to_email)
             return True
@@ -58,8 +70,8 @@ class EmailService:
             logger.error("[EMAIL_VERIFY] 发送失败: %s reason=%s", to_email, str(e))
             return False
 
+    @staticmethod
     def send_report_email(
-        self,
         to_email: str,
         stock_code: str,
         stock_name: str,
@@ -68,13 +80,7 @@ class EmailService:
     ) -> bool:
         """
         发送分析报告邮件 — 原始 .md 文件作为附件
-
-        Args:
-            to_email: 收件人邮箱
-            stock_code: 股票代码
-            stock_name: 股票名称
-            report: Markdown 报告
-            html_report: 已废弃，保留兼容性
+        （在 Celery worker 中同步调用，不需要 async）
         """
         logger.info(
             "[EMAIL_SEND][START] 开始发送邮件 | to=%s stock=%s",
@@ -91,11 +97,9 @@ class EmailService:
             msg["To"] = to_email
             msg["Subject"] = f"【股票分析】{stock_code} {stock_name} 分析报告"
 
-            # 正文
             body = f"{stock_name}({stock_code}) 分析报告见附件。\n\n可在线下载：http://66.63.162.26/history"
             msg.attach(MIMEText(body, "plain", "utf-8"))
 
-            # 附件：原始 .md 文件
             filename = f"{stock_code}_{stock_name}_分析报告.md"
             part = MIMEText(report, "plain", "utf-8")
             part.add_header("Content-Disposition", "attachment", filename=("utf-8", "", filename))
@@ -104,32 +108,12 @@ class EmailService:
             logger.info("[EMAIL_SEND][MSG_BUILT] 附件构建完成 | to=%s file=%s", to_email, filename)
 
         except Exception as e:
-            logger.error(
-                "[EMAIL_SEND][BUILD_FAIL] 邮件构建失败 | to=%s reason=%s",
-                to_email, str(e),
-            )
+            logger.error("[EMAIL_SEND][BUILD_FAIL] 邮件构建失败 | to=%s reason=%s", to_email, str(e))
             raise
 
-        server = None
-        try:
-            server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30)
-            server.set_debuglevel(0)
-            if settings.smtp_use_tls:
-                server.starttls()
-            server.login(settings.smtp_user, settings.smtp_password)
-            server.sendmail(settings.smtp_from, to_email, msg.as_string())
-            logger.info("[EMAIL_SEND][SUCCESS] 邮件发送成功 | to=%s stock=%s", to_email, stock_code)
-            return True
-
-        except Exception as e:
-            logger.error("[EMAIL_SEND][FAILED] 发送失败 | to=%s reason=%s", to_email, str(e))
-            raise
-        finally:
-            if server:
-                try:
-                    server.quit()
-                except Exception:
-                    pass
+        _send_sync(msg)
+        logger.info("[EMAIL_SEND][SUCCESS] 邮件发送成功 | to=%s stock=%s", to_email, stock_code)
+        return True
 
 
 email_service = EmailService()

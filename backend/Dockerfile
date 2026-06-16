@@ -39,4 +39,4 @@ RUN mkdir -p /app/pdf_cache /app/logs
 EXPOSE 8000
 
 # 默认启动 FastAPI
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

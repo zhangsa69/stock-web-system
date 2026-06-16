@@ -1,10 +1,22 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import AppHeader from "./components/layout/AppHeader.vue";
 import AppFooter from "./components/layout/AppFooter.vue";
 import { useAuthStore } from "./stores/auth";
+import { setGlobalErrorHandler } from "./api/client";
 
 const auth = useAuthStore();
+
+const globalError = ref("");
+const showError = ref(false);
+let errorTimer: ReturnType<typeof setTimeout> | null = null;
+
+setGlobalErrorHandler((msg: string) => {
+  globalError.value = msg;
+  showError.value = true;
+  if (errorTimer) clearTimeout(errorTimer);
+  errorTimer = setTimeout(() => { showError.value = false; }, 5000);
+});
 
 onMounted(async () => {
   if (auth.isLoggedIn) {
@@ -24,6 +36,16 @@ onMounted(async () => {
       </router-view>
     </main>
     <AppFooter />
+
+    <!-- 全局错误 Toast -->
+    <transition name="toast">
+      <div
+        v-if="showError"
+        class="fixed bottom-6 right-6 z-[9999] bg-red-500/90 backdrop-blur text-white px-5 py-3 rounded-xl shadow-lg text-sm max-w-sm"
+      >
+        ⚠ {{ globalError }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -36,4 +58,8 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
 }
+.toast-enter-active { transition: all 0.3s ease; }
+.toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from { opacity: 0; transform: translateY(20px); }
+.toast-leave-to { opacity: 0; transform: translateY(20px); }
 </style>

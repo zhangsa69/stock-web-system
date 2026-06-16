@@ -69,6 +69,10 @@ async def start_analysis(
         task.id, req.stock_code,
     )
 
+    # ── 扣除 1 点券（先扣再提交任务，失败则回滚）──
+    u.tickets -= 1
+    await db.flush()
+
     # 提交 Celery 异步任务
     try:
         from ..tasks.analysis_tasks import run_hermes_skill
@@ -82,9 +86,12 @@ async def start_analysis(
             task.id, celery_task.id,
         )
     except Exception as e:
+        # Celery 提交失败 → 回滚点券
+        u.tickets += 1
+        await db.flush()
         logger.error(
-            "[ANALYSIS][CELERY_FAIL] Celery提交失败 | task_id=%s reason=%s",
-            task.id, str(e), exc_info=True,
+            "[ANALYSIS][CELERY_FAIL] Celery提交失败，点券已回滚 | task_id=%s reason=%s balance=%d",
+            task.id, str(e), u.tickets, exc_info=True,
         )
         await service.update_task_status(
             task_id=task.id,
@@ -93,9 +100,6 @@ async def start_analysis(
         )
         raise HTTPException(status_code=500, detail="分析任务调度失败，请稍后重试")
 
-    # ── 扣除 1 点券 ──
-    u.tickets -= 1
-    await db.flush()
     logger.info("[ANALYSIS][DEDUCT] 扣除点券 | user=%s balance=%d", email, u.tickets)
 
     await service.update_task_status(
