@@ -10,6 +10,8 @@
 
 ## 🚀 项目简介
 
+基于 [CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) 二次开发，在其财报获取与 NotebookLM 集成能力之上，构建了完整的 Web 平台：用户注册登录、点券充值、异步分析、邮件报告、管理后台等生产级功能。
+
 输入 A 股/港股代码，自动拉取近五年财报，通过 NotebookLM 大模型深度分析，生成结构化投资报告并发送至邮箱。全程自动化，从代码到报告只需十余分钟。
 
 ### 核心能力
@@ -214,5 +216,12 @@ MIT License
 
 ## 🔗 相关链接
 
+- [CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) — 本项目的数据采集与分析管道基础
 - [Hermes Agent](https://hermes-agent.nousresearch.com)
 - [编码规则](./编码规则.md)
+
+---
+
+## 🙏 致谢
+
+本项目基于 [jarodise/CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) 二次开发，感谢原作者提供的巨潮资讯网财报爬取与 NotebookLM 集成方案，为本项目奠定了数据采集与 AI 分析的核心能力。
