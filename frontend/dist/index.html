@@ -157,6 +157,17 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-pill);
 }
 
+/* Mobile compact account display */
+.nav-account-mob {
+  display: none;
+  font-size: 12px; font-weight: 500; color: var(--text-secondary);
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  line-height: 1.3;
+}
+.nav-account-mob .mob-accent {
+  color: var(--accent); font-weight: 600;
+}
+
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 6px; font-size: 14px; font-weight: 500; cursor: pointer;
@@ -197,6 +208,13 @@ a:hover { text-decoration: underline; }
 }
 .btn-ghost:hover { background: rgba(0,113,227,0.06); }
 
+.btn-danger {
+  background: var(--red); color: #fff;
+  padding: 8px 16px; border-radius: var(--radius-pill);
+}
+.btn-danger:hover { background: #e0352b; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
 /* ========== PAGE SECTIONS ========== */
 .page { display: none; }
 .page.active { display: block; }
@@ -232,10 +250,92 @@ a:hover { text-decoration: underline; }
   max-width: 560px; margin-left: auto; margin-right: auto;
 }
 
+/* ===== UIVERSE SEARCH (adapted Lakshay-art → Apple) ===== */
+.uq-hero-search {
+  display: flex; align-items: center; gap: 12px;
+  max-width: 620px; margin: 0 auto 20px;
+}
+.uq-poda {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 70px;
+}
+.uq-white, .uq-border-glow, .uq-darkBorderBg, .uq-glow {
+  position: absolute; overflow: hidden; z-index: -1; border-radius: 12px;
+  filter: blur(3px);
+}
+.uq-darkBorderBg { max-height: 65px; max-width: 558px; width: 100%; height: 100%; }
+.uq-darkBorderBg::before {
+  content: ""; z-index: -2; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) rotate(82deg);
+  position: absolute; width: 600px; height: 600px;
+  background-image: conic-gradient(transparent, #1e40af, transparent 10%, transparent 50%, #7c3aed, transparent 60%);
+  transition: all 2s;
+}
+.uq-white { max-height: 63px; max-width: 453px; width: 100%; height: 100%; border-radius: 10px; filter: blur(2px); }
+.uq-white::before {
+  content: ""; z-index: -2; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) rotate(83deg);
+  position: absolute; width: 600px; height: 600px;
+  filter: brightness(1.4);
+  background-image: conic-gradient(transparent 0%, #93c5fd, transparent 8%, transparent 50%, #c084fc, transparent 58%);
+  transition: all 2s;
+}
+.uq-border-glow { max-height: 59px; max-width: 449px; width: 100%; height: 100%; border-radius: 11px; filter: blur(0.5px); }
+.uq-border-glow::before {
+  content: ""; z-index: -2; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) rotate(70deg);
+  position: absolute; width: 600px; height: 600px;
+  filter: brightness(1.3);
+  background-image: conic-gradient(#e5e7eb, #0071e3 5%, #e5e7eb 14%, #e5e7eb 50%, #a855f7 60%, #e5e7eb 64%);
+  transition: all 2s;
+}
+.uq-glow { overflow: hidden; filter: blur(30px); opacity: 0.4; max-height: 130px; max-width: 500px; width: 100%; height: 100%; }
+.uq-glow::before {
+  content: ""; z-index: -2; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) rotate(60deg);
+  position: absolute; width: 999px; height: 999px;
+  background-image: conic-gradient(transparent, #0071e3 5%, transparent 38%, transparent 50%, #a855f7 60%, transparent 87%);
+  transition: all 2s;
+}
+/* Hover → layers spin ~180° */
+.uq-poda:hover > .uq-darkBorderBg::before { transform: translate(-50%,-50%) rotate(262deg); }
+.uq-poda:hover > .uq-glow::before { transform: translate(-50%,-50%) rotate(240deg); }
+.uq-poda:hover > .uq-white::before { transform: translate(-50%,-50%) rotate(263deg); }
+.uq-poda:hover > .uq-border-glow::before { transform: translate(-50%,-50%) rotate(250deg); }
+/* Focus → fast full spin */
+.uq-poda:focus-within > .uq-darkBorderBg::before { transform: translate(-50%,-50%) rotate(442deg); transition: all 4s; }
+.uq-poda:focus-within > .uq-glow::before { transform: translate(-50%,-50%) rotate(420deg); transition: all 4s; }
+.uq-poda:focus-within > .uq-white::before { transform: translate(-50%,-50%) rotate(443deg); transition: all 4s; }
+.uq-poda:focus-within > .uq-border-glow::before { transform: translate(-50%,-50%) rotate(430deg); transition: all 4s; }
+
+#uq-main { position: relative; width: 100%; }
+.uq-input {
+  background-color: #f5f5f7; border: none; width: 100%; height: 56px;
+  border-radius: 10px; color: #1d1d1f; padding-inline: 46px;
+  font-size: 18px; font-family: inherit; outline: none;
+}
+.uq-input::placeholder { color: #86868b; }
+#uq-input-mask {
+  pointer-events: none; width: 100px; height: 20px; position: absolute;
+  background: linear-gradient(90deg, transparent, #f5f5f7);
+  top: 18px; left: 70px;
+}
+#uq-main:focus-within > #uq-input-mask { display: none; }
+#uq-pink-mask {
+  pointer-events: none; width: 30px; height: 20px; position: absolute;
+  background: #0071e3; top: 10px; left: 5px;
+  filter: blur(20px); opacity: 0.8; transition: all 2s;
+}
+#uq-main:hover > #uq-pink-mask { opacity: 0; }
+
+#uq-search-icon { position: absolute; left: 20px; top: 15px; }
+@keyframes uq-rotate { 100% { transform: translate(-50%,-50%) rotate(450deg); } }
+.uq-hero-search > .btn { flex-shrink: 0; height: 56px; padding: 0 28px; font-size: 17px; }
+
 .search-pill {
   display: flex; align-items: center;
   background: var(--bg-soft); border-radius: 28px;
-  padding: 6px; max-width: 520px; margin: 0 auto 20px;
+  padding: 6px; max-width: 560px; margin: 0 auto 20px;
   border: 1.5px solid transparent;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -577,7 +677,6 @@ a:hover { text-decoration: underline; }
   aspect-ratio: 3 / 4;
   max-width: 220px;
   justify-self: center;
-  cursor: pointer;
   background: transparent;
   border: none;
   padding: 0;
@@ -587,14 +686,8 @@ a:hover { text-decoration: underline; }
 .pricing-card .content {
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 16px;
   position: relative;
-}
-
-.pricing-card:hover .content {
-  transform: rotateY(180deg);
 }
 
 .pricing-card .front,
@@ -602,10 +695,9 @@ a:hover { text-decoration: underline; }
   position: absolute;
   width: 100%;
   height: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   border-radius: 16px;
   overflow: hidden;
+  transition: opacity 350ms ease;
 }
 
 /* BACK SIDE (default visible) */
@@ -616,6 +708,8 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   border: 2px solid var(--border-light);
   box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .pricing-card .back::before {
@@ -667,15 +761,21 @@ a:hover { text-decoration: underline; }
 
 /* FRONT SIDE (visible on hover/flip) */
 .pricing-card .front {
-  transform: rotateY(180deg);
+  opacity: 1;
+  pointer-events: auto;
   background: linear-gradient(135deg, #f0f4ff 0%, #fff 60%);
   border: 2px solid var(--border-light);
   box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+.pricing-card .back {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .pricing-card .front-content {
   position: absolute;
   inset: 0;
+  z-index: 1;
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
@@ -746,6 +846,7 @@ a:hover { text-decoration: underline; }
   border-radius: 50%;
   filter: blur(30px);
   opacity: 0.3;
+  pointer-events: none;
   animation: recharge-float 3000ms infinite ease-in-out;
 }
 
@@ -796,8 +897,13 @@ a:hover { text-decoration: underline; }
   border-radius: 10px;
   cursor: pointer;
   letter-spacing: 1px;
+  text-decoration: none;
   transition: all var(--transition);
   user-select: none;
+  pointer-events: auto;
+  z-index: 10;
+  position: relative;
+  touch-action: manipulation;
 }
 .purchase-cta:hover {
   background: var(--accent-hover);
@@ -813,10 +919,7 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 4px 16px rgba(255,107,53,0.4);
 }
 
-/* Click-based flip */
-.pricing-card.flipped .content {
-  transform: rotateY(180deg);
-}
+/* Flip removed — front always visible */
 
 /* Mobile */
 @media (max-width: 768px) {
@@ -838,23 +941,42 @@ a:hover { text-decoration: underline; }
 
 .redeem-row input {
   flex: 1;
-  border: 1.5px solid var(--border);
-  background: #fff;
-  padding: 12px 18px; border-radius: var(--radius-pill);
-  font-size: 15px; font-family: inherit; outline: none;
-  transition: all var(--transition);
+  border-radius: 10px;
+  outline: 2px solid #FEBF00;
+  border: 0;
+  background-color: #e2e2e2;
+  outline-offset: 3px;
+  padding: 12px 1rem;
+  font-size: 15px; font-family: inherit;
+  transition: 0.25s;
 }
 .redeem-row input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
-  background: #fff;
+  outline-offset: 5px;
+  background-color: #fff;
 }
 .redeem-row input::placeholder {
   color: var(--text-tertiary);
 }
 
+.redeem-row .btn {
+  border-radius: 10px;
+  outline: 2px solid #FEBF00;
+  border: 0;
+  background: transparent;
+  outline-offset: 2px;
+  color: #B8860B;
+  padding: 12px 24px;
+  font-size: 15px; font-weight: 500;
+  cursor: pointer;
+  transition: 0.25s;
+}
+.redeem-row .btn:hover {
+  outline-offset: 4px;
+  background: #FFF8E1;
+}
+
 /* ========== ANALYSIS PAGE ========== */
-.analysis-search { max-width: 560px; margin: 0 auto 40px; }
+.analysis-search { max-width: 600px; margin: 0 auto 40px; }
 
 .progress-container {
   background: var(--bg); border-radius: var(--radius-lg);
@@ -1154,6 +1276,8 @@ a:hover { text-decoration: underline; }
   .nav-toggle { display: flex; }
   .nav-actions .balance-badge { display: none; }
   .nav-actions #navUserEmail { display: none; }
+  .nav-actions .nav-account-mob { display: inline; }
+  .nav-actions .btn { font-size: 12px; padding: 8px 14px; }
 
   /* Hero */
   .hero { padding: 48px 16px 40px; }
@@ -1272,6 +1396,35 @@ a:hover { text-decoration: underline; }
   /* Container padding */
   .container { padding: 0 8px; }
   .container-sm { padding: 0 8px; }
+
+  /* ── Uiverse hero search mobile ── */
+  .uq-hero-search {
+    flex-direction: column;
+    max-width: 100%;
+    gap: 10px;
+  }
+  .uq-hero-search > .btn {
+    width: 100%; height: 48px;
+    font-size: 16px; padding: 0 20px;
+    border-radius: 14px;
+  }
+  .uq-poda { height: 56px; }
+  .uq-input { height: 46px; padding-inline: 42px; font-size: 16px; }
+  .uq-darkBorderBg { max-height: 52px; max-width: 100%; }
+  .uq-white { max-height: 50px; max-width: 100%; }
+  .uq-border-glow { max-height: 48px; max-width: 100%; }
+  .uq-glow { max-height: 100px; max-width: 100%; opacity: 0.2; }
+  #uq-input-mask { top: 13px; left: 55px; }
+  #uq-search-icon { left: 12px; }
+  #uq-filter-icon { right: 12px; }
+
+  /* ── Comparison table mobile ── */
+  .comparison-table {
+    -webkit-overflow-scrolling: touch;
+  }
+  .comparison-table th,
+  .comparison-table td { padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+  .comparison-table td:first-child { font-size: 11px; font-weight: 600; }
 }
 
 /* Small phones */
@@ -1289,7 +1442,145 @@ a:hover { text-decoration: underline; }
   .section-title { font-size: 22px; }
   .btn { font-size: 13px; }
   .btn-large { padding: 12px 24px; font-size: 14px; }
+
+  /* ── Touch-friendly sizing ── */
+  .btn, .purchase-cta { min-height: 44px; }
+  .search-pill input, .uq-input { min-height: 44px; }
+  .quick-code { min-height: 36px; line-height: 36px; }
+  .redeem-row input { min-height: 44px; }
+
+  /* ── Pricing card text ── */
+  .pricing-card .front .detail-title strong { font-size: 11px; }
+  .pricing-card .front .detail-price { font-size: 16px; }
+  .pricing-card .front .detail-desc { font-size: 9px; line-height: 1.4; }
+  .pricing-card .front .badge { font-size: 9px; padding: 2px 8px; }
+  .pricing-card .purchase-cta { font-size: 11px; padding: 8px 0; }
+
+  /* ── Hero super compact ── */
+  .hero { padding: 36px 12px 32px; }
+  .hero h1 { font-size: 22px; }
+  .hero .subtitle { font-size: 13px; }
+  .uq-input { padding-inline: 38px; font-size: 15px; }
+  #uq-search-icon { left: 8px; }
+  #uq-filter-icon { right: 8px; }
 }
+
+
+/* ========== ADMIN PAGES ========== */
+.admin-page { display: none; }
+.admin-page.active { display: block; }
+
+.admin-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; background: rgba(255,255,255,0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky; top: 0; z-index: 99;
+}
+.admin-header h2 { font-size: 18px; font-weight: 600; }
+.admin-header-actions { display: flex; gap: 12px; align-items: center; }
+
+.admin-sidebar {
+  width: 220px; background: var(--bg-soft); min-height: calc(100vh - 52px);
+  padding: 24px 0; border-right: 1px solid var(--border-light);
+  position: fixed; top: 52px; left: 0; z-index: 50;
+}
+.admin-sidebar a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 24px; font-size: 14px; color: var(--text-secondary);
+  cursor: pointer; transition: all var(--transition);
+  border-left: 3px solid transparent;
+}
+.admin-sidebar a:hover, .admin-sidebar a.active {
+  color: var(--text); background: #fff; border-left-color: var(--accent);
+}
+.admin-main {
+  margin-left: 220px; padding: 32px; min-height: calc(100vh - 52px);
+}
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.stat-card {
+  background: #fff; border-radius: var(--radius); padding: 24px;
+  box-shadow: var(--card-shadow); border: 1px solid var(--border-light);
+}
+.stat-card .stat-label { font-size: 13px; color: var(--text-tertiary); margin-bottom: 8px; }
+.stat-card .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+.stat-card .stat-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+
+.data-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--card-shadow); }
+.data-table th { background: var(--bg-soft); padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); }
+.data-table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--border-light); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover { background: var(--bg-soft); }
+
+.admin-search { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+.admin-search input {
+  flex: 1; padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; outline: none; transition: border var(--transition);
+}
+.admin-search input:focus { border-color: var(--accent); }
+
+.pagination { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+.pagination button {
+  padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: #fff; font-size: 13px; cursor: pointer; transition: all var(--transition);
+}
+.pagination button:hover { border-color: var(--accent); color: var(--accent); }
+.pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.admin-empty { text-align: center; padding: 48px 0; color: var(--text-tertiary); font-size: 14px; }
+
+.admin-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.admin-tag.used { background: var(--green-bg); color: var(--green); }
+.admin-tag.unused { background: var(--bg-soft); color: var(--text-tertiary); }
+
+.import-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 32px; text-align: center; cursor: pointer;
+  transition: all var(--transition); margin-bottom: 20px;
+}
+.import-zone:hover { border-color: var(--accent); background: var(--bg-soft); }
+.import-zone.importing { opacity: 0.6; pointer-events: none; }
+
+@media (max-width: 768px) {
+  .admin-sidebar { width: 100%; position: static; min-height: auto; padding: 12px; border-right: none; border-bottom: 1px solid var(--border-light); display: flex; gap: 8px; overflow-x: auto; }
+  .admin-sidebar a { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; padding: 8px 16px; }
+  .admin-sidebar a.active { border-bottom-color: var(--accent); }
+  .admin-main { margin-left: 0; padding: 20px; }
+}
+
+/* ── About stats grid ── */
+.about-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+.about-stat-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.about-stat-desc {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .about-stats { gap: 12px; }
+  .about-stat-title { font-size: 22px; margin-bottom: 4px; }
+  .about-stat-desc { font-size: 12px; }
+}
+
+@media (max-width: 400px) {
+  .about-stat-title { font-size: 18px; }
+  .about-stat-desc { font-size: 11px; }
+}
+
 </style>
 </head>
 <body>
@@ -1306,7 +1597,7 @@ a:hover { text-decoration: underline; }
       <a onclick="navigate('home')" data-nav="home" class="active">首页</a>
       <a onclick="scrollToSection('pricingSection')" data-nav="pricing">定价</a>
       <a onclick="scrollToSection('rechargeSection')" data-nav="recharge">充值</a>
-      <a onclick="navigate('history')" data-nav="history">历史分析</a>
+      <a onclick="navigate('history')" data-nav="history">我的分析</a>
       <a onclick="scrollToSection('aboutSection')" data-nav="about">关于</a>
     </div>
     <div class="nav-actions" id="navActions">
@@ -1320,7 +1611,7 @@ a:hover { text-decoration: underline; }
   <a onclick="navigate('home');closeMobileNav()" data-mob-nav="home" class="active">🏠 首页</a>
   <a onclick="scrollToSection('pricingSection');closeMobileNav()" data-mob-nav="pricing">💎 定价方案</a>
   <a onclick="scrollToSection('rechargeSection');closeMobileNav()" data-mob-nav="recharge">🪙 点券充值</a>
-  <a onclick="navigate('history');closeMobileNav()" data-mob-nav="history">📋 历史分析</a>
+  <a onclick="navigate('history');closeMobileNav()" data-mob-nav="history">📋 我的分析</a>
   <a onclick="scrollToSection('aboutSection');closeMobileNav()" data-mob-nav="about">ℹ️ 关于我们</a>
   <div class="mobile-balance" id="mobileBalance" style="display:none"></div>
 </div>
@@ -1334,8 +1625,36 @@ a:hover { text-decoration: underline; }
   <div class="hero">
     <h1>元基财报分析引擎</h1>
     <p class="subtitle">基于企业财报深挖企业核心基本面的超级AI分析平台</p>
-    <div class="search-pill" id="heroSearchPill">
-      <input type="text" id="heroStockCode" placeholder="输入股票代码（A股6位/港股1-5位）" autocomplete="off">
+    <div class="uq-hero-search">
+      <div class="uq-poda">
+        <div class="uq-glow"></div>
+        <div class="uq-darkBorderBg"></div>
+        <div class="uq-darkBorderBg"></div>
+        <div class="uq-darkBorderBg"></div>
+        <div class="uq-white"></div>
+        <div class="uq-border-glow"></div>
+        <div id="uq-main">
+          <input type="text" id="heroStockCode" placeholder="输入股票代码（A股6位/港股1-5位）" autocomplete="off" class="uq-input">
+          <div id="uq-input-mask"></div>
+          <div id="uq-pink-mask"></div>
+          <div id="uq-search-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" height="24" fill="none">
+              <circle stroke="url(#uq-s)" r="8" cy="11" cx="11"></circle>
+              <line stroke="url(#uq-sl)" y2="16.65" y1="22" x2="16.65" x1="22"></line>
+              <defs>
+                <linearGradient gradientTransform="rotate(50)" id="uq-s">
+                  <stop stop-color="#dbeafe" offset="0%"></stop>
+                  <stop stop-color="#93c5fd" offset="50%"></stop>
+                </linearGradient>
+                <linearGradient id="uq-sl">
+                  <stop stop-color="#93c5fd" offset="0%"></stop>
+                  <stop stop-color="#60a5fa" offset="50%"></stop>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+      </div>
       <button class="btn btn-primary" id="heroAnalysisBtn" onclick="startAnalysisFromHero()">开始分析</button>
     </div>
     <div class="login-prompt" id="heroLoginPrompt" style="display:none">
@@ -1365,7 +1684,7 @@ a:hover { text-decoration: underline; }
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9m-9 9a9 9 0 019-9"/></svg>
           </div>
           <h3>智能财报采集</h3>
-          <p>对接巨潮资讯网、SEC EDGAR 等多数据源，自动识别 A 股、港股、美股市场。实时拉取年报、半年报、季报，结构化提取营收、利润、现金流等上百项财务指标，全程无需人工介入。</p>
+          <p>对接巨潮资讯网等多数据源，自动识别 A 股、港股市场。实时拉取年报、半年报、季报，结构化提取营收、利润、现金流等上百项财务指标，全程无需人工介入。</p>
           <ul class="feature-tags">
             <li>多市场覆盖</li><li>实时拉取</li><li>结构化解析</li>
           </ul>
@@ -1413,7 +1732,7 @@ a:hover { text-decoration: underline; }
             <div class="step-number">2</div>
             <div class="step-line"></div>
             <h4>自动数据采集</h4>
-            <p>对接巨潮资讯、SEC 等多数据源，实时拉取最新季报/年报，结构化清洗提取</p>
+            <p>对接巨潮资讯等多数据源，实时拉取最新季报/年报，结构化清洗提取</p>
           </div>
           <div class="step-item">
             <div class="step-number">3</div>
@@ -1475,7 +1794,7 @@ a:hover { text-decoration: underline; }
               <td>成本</td>
               <td>时间成本极高，单只股票需数小时</td>
               <td>免费但分析质量低，无法支撑投资决策</td>
-              <td class="col-highlight"><span class="check">✓</span> 单次仅需1点券（¥1），机构级分析，物超所值</td>
+              <td class="col-highlight"><span class="check">✓</span> 单次仅需2点券（¥2），机构级分析，物超所值</td>
             </tr>
           </tbody>
         </table>
@@ -1490,12 +1809,12 @@ a:hover { text-decoration: underline; }
       <p class="section-subtitle">每次分析消耗1点券，选择适合你的方案</p>
       <div class="pricing-grid">
         <!-- 1点券 -->
-        <div class="pricing-card" onclick="toggleCardFlip(this)">
+        <div class="pricing-card">
           <div class="content">
             <div class="back">
               <div class="back-content">
                 <div class="back-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v3"/><path d="M12 14v3"/><path d="M9.5 10.5c0-.8.7-1.5 1.5-1.5h1.5c1.1 0 2 .9 2 2s-.9 2-2 2H11c-1.1 0-2 .9-2 2s.9 2 2 2h1.5c.8 0 1.5-.7 1.5-1.5"/></svg></div>
-                <div class="back-credits">1</div>
+                <div class="back-credits">2</div>
                 <div class="back-label">点 券</div>
               </div>
             </div>
@@ -1506,24 +1825,24 @@ a:hover { text-decoration: underline; }
                 <span class="badge">体验版</span>
                 <div class="detail-box">
                   <div class="detail-title">
-                    <strong>1 点券套餐</strong>
+                    <strong>2 点券套餐</strong>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
                   </div>
-                  <div class="detail-price">¥1</div>
+                  <div class="detail-price">¥2</div>
                   <div class="detail-desc">单次体验，分析一只股票</div>
                 </div>
-                <div class="purchase-cta" onclick="event.stopPropagation();selectPricing(1,1)">点击购买 →</div>
+                <div class="purchase-cta" onclick="event.stopPropagation();location.href='https://68n.cn/YhVjH'">点击购买 →</div>
               </div>
             </div>
           </div>
         </div>
         <!-- 20点券 推荐 -->
-        <div class="pricing-card recommended" onclick="toggleCardFlip(this)">
+        <div class="pricing-card recommended">
           <div class="content">
             <div class="back">
               <div class="back-content">
                 <div class="back-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v3"/><path d="M12 14v3"/><path d="M9.5 10.5c0-.8.7-1.5 1.5-1.5h1.5c1.1 0 2 .9 2 2s-.9 2-2 2H11c-1.1 0-2 .9-2 2s.9 2 2 2h1.5c.8 0 1.5-.7 1.5-1.5"/></svg></div>
-                <div class="back-credits" style="color:#ff6b35">20</div>
+                <div class="back-credits" style="color:#ff6b35">30</div>
                 <div class="back-label" style="color:#ff6b35">点 券</div>
               </div>
             </div>
@@ -1534,19 +1853,19 @@ a:hover { text-decoration: underline; }
                 <span class="badge">🔥 推荐</span>
                 <div class="detail-box">
                   <div class="detail-title">
-                    <strong>20 点券套餐</strong>
+                    <strong>30 点券套餐</strong>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff6b35"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
                   </div>
-                  <div class="detail-price">¥18</div>
-                  <div class="detail-desc">深度研究，分析20只股票，节省10%</div>
+                  <div class="detail-price">¥30</div>
+                  <div class="detail-desc">深度研究，分析15只股票</div>
                 </div>
-                <div class="purchase-cta recommended-cta" onclick="event.stopPropagation();selectPricing(20,18)">点击购买 →</div>
+                <div class="purchase-cta recommended-cta" onclick="event.stopPropagation();location.href='https://68n.cn/reygI'">点击购买 →</div>
               </div>
             </div>
           </div>
         </div>
         <!-- 50点券 -->
-        <div class="pricing-card" onclick="toggleCardFlip(this)">
+        <div class="pricing-card">
           <div class="content">
             <div class="back">
               <div class="back-content">
@@ -1565,16 +1884,16 @@ a:hover { text-decoration: underline; }
                     <strong>50 点券套餐</strong>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
                   </div>
-                  <div class="detail-price">¥40</div>
-                  <div class="detail-desc">专业研究，分析50只股票，节省20%</div>
+                  <div class="detail-price">¥50</div>
+                  <div class="detail-desc">专业研究，分析25只股票</div>
                 </div>
-                <div class="purchase-cta" onclick="event.stopPropagation();selectPricing(50,40)">点击购买 →</div>
+                <div class="purchase-cta" onclick="event.stopPropagation();location.href='https://68n.cn/HfiR9'">点击购买 →</div>
               </div>
             </div>
           </div>
         </div>
         <!-- 100点券 -->
-        <div class="pricing-card" onclick="toggleCardFlip(this)">
+        <div class="pricing-card">
           <div class="content">
             <div class="back">
               <div class="back-content">
@@ -1593,18 +1912,18 @@ a:hover { text-decoration: underline; }
                     <strong>100 点券套餐</strong>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
                   </div>
-                  <div class="detail-price">¥75</div>
-                  <div class="detail-desc">机构级研究，分析100只股票，节省25%</div>
+                  <div class="detail-price">¥100</div>
+                  <div class="detail-desc">机构级研究，分析50只股票</div>
                 </div>
-                <div class="purchase-cta" onclick="event.stopPropagation();selectPricing(100,75)">点击购买 →</div>
+                <div class="purchase-cta" onclick="event.stopPropagation();location.href='https://68n.cn/LSSEh'">点击购买 →</div>
               </div>
             </div>
           </div>
         </div>
       </div>
       <div class="redeem-row">
-        <input type="text" id="redeemCode" placeholder="输入兑换码">
-        <button class="btn btn-secondary" onclick="redeemCode()">兑换</button>
+        <input type="text" id="redeemCode" placeholder="输入充值代码">
+        <button class="btn btn-secondary" onclick="redeemCode()">充值</button>
       </div>
     </div>
   </div>
@@ -1617,10 +1936,30 @@ a:hover { text-decoration: underline; }
         基于企业财报深挖核心基本面的超级AI分析平台。自研AI Agent自动获取并深度分析上市公司财报，
         从估值、排雷、行业对标等多维度输出结构化投资报告。
       </p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:900px;margin:0 auto;text-align:center">
-        <div style="padding:24px"><div style="font-size:34px;font-weight:700;color:var(--accent);margin-bottom:6px">全自动</div><div style="font-size:15px;color:var(--text-secondary)">A股+港股全覆盖，自动获取近5年财报</div></div>
-        <div style="padding:24px"><div style="font-size:34px;font-weight:700;color:var(--accent);margin-bottom:6px">深度AI</div><div style="font-size:15px;color:var(--text-secondary)">多维指标拆解+排雷+估值+行业对标</div></div>
-        <div style="padding:24px"><div style="font-size:34px;font-weight:700;color:var(--accent);margin-bottom:6px">结构化</div><div style="font-size:15px;color:var(--text-secondary)">完整报告直发邮箱，随时查阅下载</div></div>
+      <div class="about-stats">
+        <div style="padding:24px"><div class="about-stat-title">闪电速度</div><div class="about-stat-desc">A股+港股全覆盖，极速获取近5年财报</div></div>
+        <div style="padding:24px"><div class="about-stat-title">深度AI</div><div class="about-stat-desc">多维指标拆解+排雷+估值+行业对标</div></div>
+        <div style="padding:24px"><div class="about-stat-title">结构化</div><div class="about-stat-desc">完整报告直发邮箱，随时查阅下载</div></div>
+      </div>
+      <p style="text-align:center;font-size:14px;color:var(--text-tertiary);margin-top:36px">Created by 世界上起床最快的人</p>
+      <p style="text-align:center;font-size:14px;color:var(--text-tertiary);margin-top:4px">美股分析正在抓耳挠腮开发中...</p>
+      <!-- 关注我 -->
+      <div style="margin-top:40px;padding-top:32px;border-top:1px solid var(--border-light)">
+        <p style="text-align:center;font-size:15px;font-weight:600;color:var(--text);margin-bottom:20px">关注我</p>
+        <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap">
+          <a href="https://xhslink.com/m/6p6sI0k0jYz" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);text-decoration:none;transition:color 0.25s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-secondary)'">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            <span style="font-size:14px">小红书</span>
+          </a>
+          <a href="https://github.com/zhangsa69" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);text-decoration:none;transition:color 0.25s" onmouseover="this.style.color='#24292f'" onmouseout="this.style.color='var(--text-secondary)'">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span style="font-size:14px">GitHub</span>
+          </a>
+          <a href="/cdn-cgi/l/email-protection#d8a2b0b9b6bfabb9e9e9eaea98bfb5b9b1b4f6bbb7b5" style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);text-decoration:none;transition:color 0.25s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-secondary)'">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span style="font-size:14px">邮箱</span>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -1648,17 +1987,21 @@ a:hover { text-decoration: underline; }
             </div>
           </div>
         </div>
-        <h3 style="font-size:20px;font-weight:600;margin-top:24px;">正在分析</h3>
+        <h3 style="font-size:20px;font-weight:600;margin-top:24px;" id="progressTitle">正在分析</h3>
         <p style="font-size:14px;color:var(--text-secondary);margin-top:4px;" id="progressStockLabel"></p>
-        <div style="margin-top:20px;padding:20px 24px;background:rgba(0,113,227,0.04);border-radius:12px;text-align:left;max-width:480px;margin-left:auto;margin-right:auto">
+        <div style="margin-top:20px;padding:20px 24px;background:rgba(0,113,227,0.04);border-radius:12px;text-align:left;max-width:480px;margin-left:auto;margin-right:auto" id="progressDetail">
           <p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:0">
             🔬 正在对您的股票进行<strong style="color:var(--text)">深度研究</strong><br>
             ⏱ 预计耗时 <strong style="color:var(--accent)">10-15 分钟</strong><br>
-            📧 无需在页面等待，分析报告将发送至<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<strong id="progressEmail" style="color:var(--accent)"></strong>
+            📋 分析完成后可返回<strong style="color:var(--accent)">我的分析</strong>查看和下载报告
           </p>
         </div>
-        <p style="font-size:13px;color:var(--text-tertiary);margin-top:16px">您可以关闭页面，稍后查看邮件或在历史记录中下载</p>
+        <div id="countdownBox" style="margin-top:24px;text-align:center;">
+          <p style="font-size:15px;color:var(--text);margin-bottom:8px;">即将自动返回首页</p>
+          <p style="font-size:36px;font-weight:700;color:var(--accent);" id="countdownNumber">10</p>
+          <p style="font-size:13px;color:var(--text-tertiary);">秒</p>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="clearCountdownAndGoHome()">立即返回首页</button>
+        </div>
       </div>
 
       <!-- Error -->
@@ -1669,9 +2012,9 @@ a:hover { text-decoration: underline; }
         <div class="completion-icon">✓</div>
         <h3>分析完成</h3>
         <p id="completionMsg"></p>
-        <p style="font-size:13px;color:var(--text-tertiary);margin-top:4px" id="completionEmail"></p>
+        <p style="font-size:13px;color:var(--text-tertiary);margin-top:4px" id="completionEmail">📋 可返回「我的分析」查看和下载报告</p>
         <button class="btn btn-primary btn-large" onclick="downloadLatestReport()">下载报告</button>
-        <button class="btn btn-ghost mt-12" onclick="navigate('history')">查看历史记录</button>
+        <button class="btn btn-ghost mt-12" onclick="navigate('history')">查看我的分析</button>
       </div>
     </div>
   </div>
@@ -1784,7 +2127,158 @@ a:hover { text-decoration: underline; }
   </div>
 </section>
 
-<script>
+
+<!-- ==================== ADMIN PAGES ==================== -->
+
+<!-- Admin Login -->
+<section class="admin-page" id="page-admin-login">
+  <div class="section-lg">
+    <div class="container-xs">
+      <div class="auth-card">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="width:48px;height:48px;background:var(--accent);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <span style="color:#fff;font-size:20px;font-weight:700;">⚙</span>
+          </div>
+          <h2 style="font-size:22px;">管理后台</h2>
+          <p style="font-size:14px;color:var(--text-tertiary);margin-top:6px;">仅限管理员登录</p>
+        </div>
+        <div id="adminLoginStep1">
+          <div class="form-group">
+            <label>管理员邮箱</label>
+            <input type="email" id="adminEmail" value="17832274061@163.com" readonly style="background:var(--bg-soft);">
+          </div>
+          <div class="form-group">
+            <button class="btn btn-primary" id="adminSendBtn" onclick="adminSendCode()">发送验证码</button>
+          </div>
+        </div>
+        <div id="adminLoginStep2" class="hidden">
+          <div class="form-group">
+            <label>验证码已发送至 <span id="adminEmailDisplay"></span></label>
+            <input type="text" id="adminCode" placeholder="输入6位验证码" maxlength="6" style="text-align:center;font-size:24px;letter-spacing:0.5em;" onkeyup="if(event.key==='Enter')adminLogin()">
+          </div>
+          <div class="form-group">
+            <button class="btn btn-primary" id="adminLoginBtn" onclick="adminLogin()">登录</button>
+          </div>
+          <p style="text-align:center;margin-top:12px;"><a href="#" onclick="adminResetLogin()" style="font-size:13px;color:var(--text-tertiary);">重新发送</a></p>
+        </div>
+        <div id="adminLoginMsg" style="text-align:center;margin-top:16px;font-size:13px;display:none;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Admin Dashboard -->
+<section class="admin-page" id="page-admin-dashboard">
+  <div class="admin-header">
+    <h2>📊 管理仪表盘</h2>
+    <div class="admin-header-actions">
+      <button class="btn btn-ghost" onclick="adminLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="admin-sidebar" id="adminSidebar">
+    <a class="active" onclick="adminNavigate('dashboard')">📊 仪表盘</a>
+    <a onclick="adminNavigate('codes')">🎫 卡密管理</a>
+    <a onclick="adminNavigate('users')">👥 用户管理</a>
+    <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
+  </div>
+  <div class="admin-main">
+    <div class="stat-grid" id="dashboardStats">
+      <div class="stat-card"><div class="stat-label">加载中...</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Admin Codes -->
+<section class="admin-page" id="page-admin-codes">
+  <div class="admin-header">
+    <h2>🎫 卡密管理</h2>
+    <div class="admin-header-actions">
+      <button class="btn btn-ghost" onclick="adminLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="admin-sidebar">
+    <a onclick="adminNavigate('dashboard')">📊 仪表盘</a>
+    <a class="active" onclick="adminNavigate('codes')">🎫 卡密管理</a>
+    <a onclick="adminNavigate('users')">👥 用户管理</a>
+    <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
+  </div>
+  <div class="admin-main">
+    <div class="import-zone" id="importZone" onclick="document.getElementById('importFile').click()">
+      <p style="font-size:15px;color:var(--text-secondary);">📁 点击或拖拽上传 CSV 文件导入卡密</p>
+      <p style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">每行一个卡密代码</p>
+      <input type="file" id="importFile" accept=".csv,.txt" style="display:none" onchange="importCodes()">
+      <div style="margin-top:12px;">
+        <label style="font-size:13px;color:var(--text-secondary);margin-right:8px;">点券面值:</label>
+        <select id="importTicketValue" onclick="event.stopPropagation()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;">
+          <option value="2">2 点券 (体验版 ¥2)</option>
+          <option value="30" selected>30 点券 (推荐 ¥30)</option>
+          <option value="50">50 点券 (专业版 ¥50)</option>
+          <option value="100">100 点券 (旗舰版 ¥100)</option>
+        </select>
+      </div>
+    </div>
+    <div class="admin-search">
+      <input type="text" id="codesSearch" placeholder="搜索卡密..." onkeyup="if(event.key==='Enter')loadAdminCodes()">
+      <select id="codesFilter" onchange="loadAdminCodes()" style="padding:10px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;">
+        <option value="all">全部状态</option>
+        <option value="used">已使用</option>
+        <option value="unused">未使用</option>
+      </select>
+      <select id="codesTicketFilter" onchange="loadAdminCodes()" style="padding:10px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;">
+        <option value="0">全部面值</option>
+        <option value="2">2 点券</option>
+        <option value="30">30 点券</option>
+        <option value="50">50 点券</option>
+        <option value="100">100 点券</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadAdminCodes()">搜索</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <label style="font-size:13px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="selectAllCodes" onchange="toggleSelectAllCodes()" style="width:16px;height:16px;cursor:pointer;"> 全选
+      </label>
+      <button class="btn btn-ghost" onclick="deleteSelectedCodes()" style="color:var(--red);font-size:13px;padding:6px 14px;">🗑 删除选中</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th style="width:40px;"></th><th>卡密</th><th>面值</th><th>状态</th><th>使用者</th><th>使用时间</th><th>创建时间</th></tr></thead>
+        <tbody id="codesTableBody"><tr><td colspan="7" class="admin-empty">加载中...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="codesPagination"></div>
+  </div>
+</section>
+
+<!-- Admin Users -->
+<section class="admin-page" id="page-admin-users">
+  <div class="admin-header">
+    <h2>👥 用户管理</h2>
+    <div class="admin-header-actions">
+      <button class="btn btn-ghost" onclick="adminLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="admin-sidebar">
+    <a onclick="adminNavigate('dashboard')">📊 仪表盘</a>
+    <a onclick="adminNavigate('codes')">🎫 卡密管理</a>
+    <a class="active" onclick="adminNavigate('users')">👥 用户管理</a>
+    <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
+  </div>
+  <div class="admin-main">
+    <div class="admin-search">
+      <input type="text" id="usersSearch" placeholder="搜索用户邮箱..." onkeyup="if(event.key==='Enter')loadAdminUsers()">
+      <button class="btn btn-primary" onclick="loadAdminUsers()">搜索</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>邮箱</th><th>点券余额</th><th>已验证</th><th>注册时间</th><th>操作</th></tr></thead>
+        <tbody id="usersTableBody"><tr><td colspan="5" class="admin-empty">加载中...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="usersPagination"></div>
+  </div>
+</section>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ========================================================================
    SPA ROUTER & STATE
    ======================================================================== */
@@ -2030,12 +2524,23 @@ function updateNavAuth() {
     container.innerHTML = `
       <span class="balance-badge" id="navBalance">💎 ${currentBalance} 点券</span>
       <span style="font-size:13px;color:var(--text-secondary);" id="navUserEmail"></span>
+      <span class="nav-account-mob" id="navAccountMob">
+        <span class="mob-accent">💎${currentBalance}</span>
+      </span>
       <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
     `;
     // Try to load user info
     apiFetch('/auth/me').then(data => {
       currentUserEmail = data.email || '';
       document.getElementById('navUserEmail').textContent = currentUserEmail;
+      // Update mobile compact display
+      const mobEl = document.getElementById('navAccountMob');
+      if (mobEl && currentUserEmail) {
+        const short = currentUserEmail.includes('@')
+          ? currentUserEmail.split('@')[0].slice(0, 8) + '…'
+          : currentUserEmail.slice(0, 10);
+        mobEl.innerHTML = `<span class="mob-accent">💎${currentBalance}</span> ${short}`;
+      }
     }).catch(() => {});
   } else {
     container.innerHTML = `
@@ -2049,13 +2554,21 @@ async function loadBalance() {
   if (!authToken) return;
   try {
     const data = await apiFetch('/recharge/balance');
-    currentBalance = data.balance || data.credits || data.points || 0;
+    currentBalance = data.tickets || 0;
     const badge = document.getElementById('navBalance');
     if (badge) badge.textContent = `💎 ${currentBalance} 点券`;
     const mobBalance = document.getElementById('mobileBalance');
     if (mobBalance) {
       mobBalance.textContent = `💎 余额：${currentBalance} 点券`;
       mobBalance.style.display = 'block';
+    }
+    // Update mobile nav bar compact display
+    const mobNav = document.getElementById('navAccountMob');
+    if (mobNav && currentUserEmail) {
+      const short = currentUserEmail.includes('@')
+        ? currentUserEmail.split('@')[0].slice(0, 8) + '…'
+        : currentUserEmail.slice(0, 10);
+      mobNav.innerHTML = `<span class="mob-accent">💎${currentBalance}</span> ${short}`;
     }
   } catch (err) {
     // Silently fail - balance not critical
@@ -2087,22 +2600,15 @@ function goRecharge() {
   }, 200);
 }
 
-function toggleCardFlip(card) {
+function toggleCardFlip(card, evt) {
+  // 点击购买按钮时不翻转卡片（处理文本节点兼容性）
+  if (evt) {
+    var target = evt.target;
+    // 如果点击到文本节点，退到父元素
+    if (target.nodeType === 3) target = target.parentElement;
+    if (target && target.closest('.purchase-cta')) return;
+  }
   card.classList.toggle('flipped');
-}
-
-const PRICING = { 1: 1, 20: 18, 50: 40, 100: 75 };
-
-function selectPricing(credits, amount) {
-  if (!authToken) {
-    showToast('请先登录/注册后再进行充值', 'error');
-    navigate('login');
-    return;
-  }
-  const label = credits + '点券 (¥' + amount + ')';
-  if (confirm('确认购买 ' + label + '？\n\n支付功能需要对接支付网关，当前为演示。')) {
-    showToast('演示模式：支付功能需对接支付宝/微信支付', 'error');
-  }
 }
 
 function scrollToSection(id) {
@@ -2183,7 +2689,9 @@ async function startAnalysis() {
   document.getElementById('progressContainer').classList.remove('hidden');
   document.getElementById('completionCard').classList.add('hidden');
   document.getElementById('progressStockLabel').textContent = '股票代码: ' + code;
-  document.getElementById('progressEmail').textContent = currentUserEmail || '您的邮箱';
+  // Email notifications disabled
+  document.getElementById('countdownNumber').textContent = '10';
+  document.getElementById('countdownBox').style.display = '';
 
   try {
     const data = await apiFetch('/analysis/start', {
@@ -2191,10 +2699,10 @@ async function startAnalysis() {
       body: JSON.stringify({ stock_code: code })
     });
     currentAnalysisId = data.id || data.analysis_id;
-    // Start polling
+    // Start polling in background + countdown
     pollAnalysisStatus(currentAnalysisId);
+    startCountdown();
   } catch (err) {
-    // Friendly error for non-existent stocks
     let errMsg = err.message;
     if (err.status === 404 || errMsg.includes('not found') || errMsg.includes('不存在')) {
       errMsg = '未找到股票代码「' + code + '」，请检查代码是否正确';
@@ -2211,6 +2719,32 @@ async function startAnalysis() {
   }
 }
 
+// ── 10 秒倒计时返回首页 ──
+let countdownTimer = null;
+
+function startCountdown() {
+  clearCountdown();
+  let seconds = 10;
+  document.getElementById('countdownNumber').textContent = seconds;
+  countdownTimer = setInterval(function() {
+    seconds--;
+    document.getElementById('countdownNumber').textContent = seconds;
+    if (seconds <= 0) {
+      clearCountdown();
+      navigate('home');
+    }
+  }, 1000);
+}
+
+function clearCountdown() {
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+}
+
+function clearCountdownAndGoHome() {
+  clearCountdown();
+  navigate('home');
+}
+
 function showAnalysisError(msg) {
   const el = document.getElementById('analysisError');
   if (el) {
@@ -2225,6 +2759,7 @@ function resetAnalysisPage() {
     clearTimeout(pollingTimer);
     pollingTimer = null;
   }
+  clearCountdown();
   currentAnalysisId = null;
   document.getElementById('progressContainer').classList.add('hidden');
   document.getElementById('completionCard').classList.add('hidden');
@@ -2243,8 +2778,7 @@ function pollAnalysisStatus(analysisId) {
         const stockName = data.stock_name || data.name || '';
         document.getElementById('completionMsg').textContent =
           '股票 ' + (data.stock_code || '') + (stockName ? ' (' + stockName + ')' : '') + ' 的财报分析已完成';
-        document.getElementById('completionEmail').textContent =
-          '报告已发送至 ' + (currentUserEmail || '您的邮箱');
+        document.getElementById('completionEmail').textContent = '📋 可返回「我的分析」查看和下载报告';
         pollingTimer = null;
         loadBalance();
         return;
@@ -2259,6 +2793,21 @@ function pollAnalysisStatus(analysisId) {
         return;
       }
 
+      // Status-aware UI updates
+      if (status === 'pending') {
+        document.getElementById('progressTitle').textContent = '排队中';
+        document.getElementById('progressDetail').querySelector('p').innerHTML =
+          '⏳ 您的任务正在队列中等待，系统将在有空闲资源时自动开始分析<br>' +
+          '📊 分析将对近<strong style=\"color:var(--text)\">5年</strong>财报进行深度研究<br>' +
+          '📋 分析完成后可返回<strong style=\"color:var(--accent)\">我的分析</strong>查看和下载报告';
+      } else if (status === 'running') {
+        document.getElementById('progressTitle').textContent = '分析中';
+        document.getElementById('progressDetail').querySelector('p').innerHTML =
+          '🔬 正在对您的股票进行<strong style=\"color:var(--text)\">深度研究</strong><br>' +
+          '⏱ 预计耗时 <strong style=\"color:var(--accent)\">10-15 分钟</strong><br>' +
+          '📋 完成后可返回<strong style=\"color:var(--accent)\">我的分析</strong>查看和下载报告';
+      }
+
       // Still processing - continue polling
       pollingTimer = setTimeout(poll, 2000);
     } catch (err) {
@@ -2271,7 +2820,7 @@ function pollAnalysisStatus(analysisId) {
 async function downloadLatestReport() {
   if (!currentAnalysisId) return;
   try {
-    const resp = await fetch(API_BASE + '/analysis/download/' + currentAnalysisId, {
+    const resp = await fetch(API_BASE + '/analysis/' + currentAnalysisId + '/download', {
       headers: authToken ? { 'Authorization': 'Bearer ' + authToken } : {}
     });
     if (!resp.ok) throw new Error('下载失败');
@@ -2323,7 +2872,8 @@ async function loadHistory() {
 
       let actionHtml = '';
       if (status === 'completed' || status === 'done') {
-        actionHtml = `<button class="btn btn-ghost" onclick="downloadReport('${item.id}')">下载</button>`;
+        actionHtml = `<button class="btn btn-ghost" onclick="downloadReport('${item.task_id}')">下载</button>
+                     <button class="btn btn-ghost" onclick="readReport('${item.task_id}')" style="color:var(--accent);margin-left:4px;">阅读</button>`;
       } else if (status === 'failed' || status === 'error') {
         actionHtml = `<span style="font-size:12px;color:var(--text-tertiary);">-</span>`;
       } else {
@@ -2347,7 +2897,7 @@ async function loadHistory() {
 
 async function downloadReport(id) {
   try {
-    const resp = await fetch(API_BASE + '/analysis/download/' + id, {
+    const resp = await fetch(API_BASE + '/analysis/' + id + '/download', {
       headers: authToken ? { 'Authorization': 'Bearer ' + authToken } : {}
     });
     if (!resp.ok) throw new Error('下载失败');
@@ -2366,23 +2916,23 @@ async function downloadReport(id) {
   }
 }
 
+async function readReport(id) {
+  // Direct URL pass — works in incognito (sessionStorage doesn't cross tabs)
+  window.open('/md-reader.html?id=' + encodeURIComponent(id), '_blank');
+}
+
 /* ========================================================================
    RECHARGE
    ======================================================================== */
 async function redeemCode() {
   const code = document.getElementById('redeemCode').value.trim();
   if (!code) {
-    showToast('请输入兑换码', 'error');
+    showToast('请输入充值代码', 'error');
     return;
   }
   if (!authToken) {
-    showToast('请先登录/注册后再进行分析', 'error');
+    showToast('请先登录/注册后再进行充值', 'error');
     navigate('login');
-    return;
-  }
-  if (currentBalance <= 0) {
-    showToast('点券余额不足，请先充值', 'error');
-    goRecharge();
     return;
   }
   try {
@@ -2390,9 +2940,22 @@ async function redeemCode() {
       method: 'POST',
       body: JSON.stringify({ code })
     });
-    showToast('兑换成功！获得 ' + (data.credits || data.points || 0) + ' 点券', 'success');
+    showToast('兑换成功！获得 ' + (data.tickets_added || 0) + ' 点券', 'success');
     document.getElementById('redeemCode').value = '';
-    loadBalance();
+    // 即时更新钻石余额（用 redeem 返回的 balance，无需二次请求）
+    currentBalance = data.balance || 0;
+    const badge = document.getElementById('navBalance');
+    if (badge) badge.textContent = `💎 ${currentBalance} 点券`;
+    const mobBalance = document.getElementById('mobileBalance');
+    if (mobBalance) mobBalance.textContent = `💎 余额：${currentBalance} 点券`;
+    // Update mobile nav bar compact
+    const mobNav = document.getElementById('navAccountMob');
+    if (mobNav && currentUserEmail) {
+      const short = currentUserEmail.includes('@')
+        ? currentUserEmail.split('@')[0].slice(0, 8) + '…'
+        : currentUserEmail.slice(0, 10);
+      mobNav.innerHTML = `<span class="mob-accent">💎${currentBalance}</span> ${short}`;
+    }
   } catch (err) {
     showToast('兑换失败: ' + err.message, 'error');
   }
@@ -2435,7 +2998,296 @@ document.addEventListener('keydown', function(e) {
 /* ========================================================================
    INIT
    ======================================================================== */
+
+/* ========================================================================
+   ADMIN
+   ======================================================================== */
+let adminToken = localStorage.getItem('admin_token') || null;
+let adminCurrentPage = 'login';
+let adminCodesPage = 1;
+let adminUsersPage = 1;
+let selectedCodes = new Set();
+
+function adminResetLogin() {
+  document.getElementById('adminLoginStep1').classList.remove('hidden');
+  document.getElementById('adminLoginStep2').classList.add('hidden');
+  document.getElementById('adminLoginMsg').style.display = 'none';
+  document.getElementById('adminCode').value = '';
+}
+
+async function adminSendCode() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const btn = document.getElementById('adminSendBtn');
+  const msg = document.getElementById('adminLoginMsg');
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+  msg.style.display = 'none';
+  try {
+    await apiFetch('/admin/send-code', { method: 'POST', body: JSON.stringify({ email }) });
+    document.getElementById('adminLoginStep1').classList.add('hidden');
+    document.getElementById('adminLoginStep2').classList.remove('hidden');
+    document.getElementById('adminEmailDisplay').textContent = email;
+    document.getElementById('adminCode').focus();
+  } catch (err) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--red)';
+    msg.textContent = err.message || '发送失败';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '发送验证码';
+  }
+}
+
+async function adminLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const code = document.getElementById('adminCode').value.trim();
+  if (!code) return;
+  const btn = document.getElementById('adminLoginBtn');
+  const msg = document.getElementById('adminLoginMsg');
+  btn.disabled = true;
+  btn.textContent = '验证中...';
+  msg.style.display = 'none';
+  try {
+    const data = await apiFetch('/admin/login', { method: 'POST', body: JSON.stringify({ email, code }) });
+    adminToken = data.access_token;
+    localStorage.setItem('admin_token', adminToken);
+    adminNavigate('dashboard');
+  } catch (err) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--red)';
+    msg.textContent = err.message || '登录失败';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '登录';
+  }
+}
+
+function adminLogout() {
+  adminToken = null;
+  localStorage.removeItem('admin_token');
+  adminCurrentPage = 'login';
+  showAdminPage('admin-login');
+  history.pushState({ admin: 'login' }, '', '/admin/login');
+}
+
+function adminNavigate(subpage) {
+  adminCurrentPage = subpage;
+  showAdminPage('admin-' + subpage);
+  history.pushState({ admin: subpage }, '', '/admin/' + subpage);
+  if (subpage === 'dashboard') loadAdminDashboard();
+  if (subpage === 'codes') loadAdminCodes();
+  if (subpage === 'users') loadAdminUsers();
+  
+  // Update sidebar active
+  document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
+  const link = document.querySelector('.admin-sidebar a[onclick*="' + subpage + '"]');
+  if (link) link.classList.add('active');
+}
+
+function showAdminPage(id) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  hideNav();
+}
+
+function hideNav() {
+  document.querySelector('.nav').style.display = 'none';
+  document.getElementById('navMobile').style.display = 'none';
+}
+
+function showNav() {
+  document.querySelector('.nav').style.display = '';
+}
+
+async function adminApiFetch(path, options) {
+  options = options || {};
+  const headers = options.headers || {};
+  headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
+  const resp = await fetch(API_BASE + path, { ...options, headers });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    if (resp.status === 401) { adminLogout(); return; }
+    const err = new Error(data.detail || data.message || '请求失败');
+    err.status = resp.status;
+    throw err;
+  }
+  return data;
+}
+
+async function loadAdminDashboard() {
+  try {
+    const d = await adminApiFetch('/admin/dashboard');
+    document.getElementById('dashboardStats').innerHTML = [
+      { label: '总用户数', value: d.total_users, sub: '' },
+      { label: '总卡密', value: d.total_codes, sub: '已用 ' + d.used_codes + ' / 未用 ' + d.unused_codes },
+      { label: '总分析', value: d.total_analyses, sub: '完成 ' + d.completed_analyses + ' / 失败 ' + d.failed_analyses },
+      { label: '点券售出', value: d.total_tickets_sold, sub: '已消耗 ' + d.total_tickets_used },
+    ].map(s => '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value">' + s.value + '</div><div class="stat-sub">' + s.sub + '</div></div>').join('');
+  } catch (err) {
+    document.getElementById('dashboardStats').innerHTML = '<div class="stat-card"><div class="stat-label">加载失败</div><div class="stat-value" style="color:var(--red);font-size:16px;">' + (err.message || '请重试') + '</div></div>';
+  }
+}
+
+async function loadAdminCodes(page) {
+  page = page || adminCodesPage;
+  adminCodesPage = page;
+  const search = document.getElementById('codesSearch')?.value || '';
+  const filter = document.getElementById('codesFilter')?.value || 'all';
+  const ticketValue = document.getElementById('codesTicketFilter')?.value || '0';
+  try {
+    const d = await adminApiFetch('/admin/codes?page=' + page + '&page_size=20&search=' + encodeURIComponent(search) + '&used_filter=' + filter + '&ticket_value=' + ticketValue);
+    const tbody = document.getElementById('codesTableBody');
+    selectedCodes.clear();
+    document.getElementById('selectAllCodes').checked = false;
+    if (!d.items || d.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">暂无卡密数据</td></tr>';
+    } else {
+      tbody.innerHTML = d.items.map(c => '<tr><td><input type="checkbox" value="' + c.id + '" onchange="toggleCodeSelect(\'' + c.id + '\', this)" style="width:16px;height:16px;cursor:pointer;"></td><td style="font-family:monospace;font-size:13px;">' + c.code + '</td><td>' + c.ticket_value + ' 点券</td><td><span class="admin-tag ' + (c.is_used ? 'used' : 'unused') + '">' + (c.is_used ? '已使用' : '未使用') + '</span></td><td>' + (c.used_by || '-') + '</td><td>' + (c.used_at ? new Date(c.used_at).toLocaleString('zh-CN') : '-') + '</td><td>' + new Date(c.created_at).toLocaleString('zh-CN') + '</td></tr>').join('');
+    }
+    renderPagination('codesPagination', d.total, 20, page, loadAdminCodes);
+  } catch (err) {
+    document.getElementById('codesTableBody').innerHTML = '<tr><td colspan="7" class="admin-empty" style="color:var(--red);">加载失败: ' + (err.message || '请重试') + '</td></tr>';
+  }
+}
+
+function toggleSelectAllCodes() {
+  const checked = document.getElementById('selectAllCodes').checked;
+  document.querySelectorAll('#codesTableBody input[type="checkbox"]').forEach(cb => {
+    cb.checked = checked;
+    if (checked) selectedCodes.add(cb.value);
+    else selectedCodes.delete(cb.value);
+  });
+}
+
+function toggleCodeSelect(id, cb) {
+  if (cb.checked) selectedCodes.add(id);
+  else {
+    selectedCodes.delete(id);
+    document.getElementById('selectAllCodes').checked = false;
+  }
+}
+
+async function deleteSelectedCodes() {
+  if (selectedCodes.size === 0) {
+    showToast('请先选择要删除的卡密', 'error');
+    return;
+  }
+  if (!confirm('确认删除选中的 ' + selectedCodes.size + ' 条卡密？\n（已使用的卡密不会被删除）')) return;
+  try {
+    const ids = Array.from(selectedCodes);
+    const data = await adminApiFetch('/admin/codes', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids: ids })
+    });
+    showToast(data.message, 'success');
+    loadAdminCodes();
+  } catch (err) {
+    showToast('删除失败: ' + (err.message || '请重试'), 'error');
+  }
+}
+
+async function loadAdminUsers(page) {
+  page = page || adminUsersPage;
+  adminUsersPage = page;
+  const search = document.getElementById('usersSearch')?.value || '';
+  try {
+    const d = await adminApiFetch('/admin/users?page=' + page + '&page_size=20&search=' + encodeURIComponent(search));
+    const tbody = document.getElementById('usersTableBody');
+    if (!d.items || d.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="admin-empty">暂无用户数据</td></tr>';
+    } else {
+      tbody.innerHTML = d.items.map(u =>
+        '<tr><td>' + u.email + '</td><td>' + u.tickets + ' 点券</td><td>' + (u.is_verified ? '✅' : '❌') + '</td><td>' + new Date(u.created_at).toLocaleString('zh-CN') + '</td><td><button class="btn btn-sm btn-danger user-delete" data-uid="' + u.id + '" data-email="' + u.email.replace(/"/g, '&quot;') + '" style="background:#dc3545;">🗑 删除</button></td></tr>'
+      ).join('');
+    }
+    renderPagination('usersPagination', d.total, 20, page, loadAdminUsers);
+  } catch (err) {
+    document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="5" class="admin-empty" style="color:var(--red);">加载失败: ' + (err.message || '请重试') + '</td></tr>';
+  }
+}
+
+// ── 用户操作：删除 ──
+document.getElementById('usersTableBody').addEventListener('click', function(e) {
+  let el = e.target;
+  while (el && el.nodeType !== 1) el = el.parentElement;
+  const btn = el ? el.closest('button') : null;
+  if (!btn) return;
+
+  if (btn.classList.contains('user-delete')) {
+    const uid = btn.dataset.uid;
+    const email = btn.dataset.email.replace(/&quot;/g, '"');
+    if (!confirm('确定要删除用户 ' + email + ' 吗？此操作不可撤销。')) return;
+    adminApiFetch('/admin/users/' + uid, { method: 'DELETE' })
+      .then(d => { showToast(d.message, 'success'); loadAdminUsers(adminUsersPage); })
+      .catch(err => showToast('删除失败: ' + (err.message || '请重试'), 'error'));
+  }
+});
+
+function renderPagination(id, total, pageSize, currentPage, loadFn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  html += '<button ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="' + loadFn.name + '(' + (currentPage - 1) + ')">‹</button>';
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+      html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="' + loadFn.name + '(' + i + ')">' + i + '</button>';
+    } else if (i === currentPage - 3 || i === currentPage + 3) {
+      html += '<button disabled>...</button>';
+    }
+  }
+  html += '<button ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="' + loadFn.name + '(' + (currentPage + 1) + ')">›</button>';
+  el.innerHTML = html;
+}
+
+async function importCodes() {
+  const fileInput = document.getElementById('importFile');
+  const file = fileInput.files[0];
+  if (!file) return;
+  const ticketValue = document.getElementById('importTicketValue').value;
+  const zone = document.getElementById('importZone');
+  zone.classList.add('importing');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch(API_BASE + '/admin/codes/import?ticket_value=' + ticketValue, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + adminToken },
+      body: formData
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || '导入失败');
+    showToast('导入成功: ' + data.imported + ' 条' + (data.skipped > 0 ? ', 跳过 ' + data.skipped + ' 条' : ''), 'success');
+    fileInput.value = '';
+    loadAdminCodes(1);
+  } catch (err) {
+    showToast('导入失败: ' + err.message, 'error');
+  } finally {
+    zone.classList.remove('importing');
+  }
+}
+
 function init() {
+  // Check for admin routes first
+  if (window.location.pathname.startsWith('/admin')) {
+    if (adminToken) {
+      const subpage = window.location.pathname.replace('/admin/', '').replace('/admin', '') || 'dashboard';
+      adminCurrentPage = subpage;
+      showAdminPage('admin-' + subpage);
+      if (subpage === 'dashboard') loadAdminDashboard();
+      if (subpage === 'codes') loadAdminCodes();
+      if (subpage === 'users') loadAdminUsers();
+    } else {
+      showAdminPage('admin-login');
+    }
+    history.replaceState({ admin: adminCurrentPage }, '', window.location.pathname);
+    return;
+  }
+
+  showNav();
   updateNavAuth();
   if (authToken) {
     loadBalance();
@@ -2445,8 +3297,20 @@ function init() {
 
   // Handle browser back/forward
   window.addEventListener('popstate', function(e) {
-    if (e.state && e.state.page) {
-      navigate(e.state.page);
+    if (e.state) {
+      if (e.state.admin) {
+        if (e.state.admin === 'login') {
+          adminCurrentPage = 'login';
+          showAdminPage('admin-login');
+        } else {
+          adminNavigate(e.state.admin);
+        }
+        return;
+      }
+      if (e.state.page) {
+        showNav();
+        navigate(e.state.page);
+      }
     }
   });
 }
@@ -2454,6 +3318,7 @@ function init() {
 // Push state on navigate
 const originalNavigate = navigate;
 navigate = function(page) {
+  showNav();
   originalNavigate(page);
   try {
     history.pushState({ page }, '', '#' + page);
@@ -2462,6 +3327,8 @@ navigate = function(page) {
 
 // Handle hash on load
 window.addEventListener('load', function() {
+  // Admin routes handled in init()
+  if (window.location.pathname.startsWith('/admin')) return;
   const hash = window.location.hash.replace('#', '');
   if (hash && document.getElementById('page-' + hash)) {
     navigate(hash);
@@ -2471,5 +3338,6 @@ window.addEventListener('load', function() {
 init();
 </script>
 
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"0b151e7066044ee4bfd0e46469b526f3","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
