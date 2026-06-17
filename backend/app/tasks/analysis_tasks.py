@@ -21,9 +21,9 @@ def _get_sync_db():
     return SyncSession(), sync_engine
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=30)
+@celery_app.task(bind=True, max_retries=6, default_retry_delay=60)
 def run_hermes_skill(self, task_id: str, skill_name: str, stock_code: str):
-    """执行 Hermes skill 分析任务（两步：分析 → HTML）"""
+    """执行 Hermes skill 分析任务（指数退避重试，最多6次）"""
     logger.info(
         "[ANALYSIS][STEP_START] Celery任务开始执行 | task_id=%s skill=%s stock=%s",
         task_id, skill_name, stock_code,
@@ -82,23 +82,48 @@ def run_hermes_skill(self, task_id: str, skill_name: str, stock_code: str):
             task.updated_at = __import__("datetime").datetime.utcnow()
             db.commit()
 
+            # 异步发送邮件 —— 已禁用（2026-06-17 用户要求取消邮件通知）
             # 异步发送邮件
-            try:
-                from .email_tasks import send_analysis_email
-                send_analysis_email.delay(task_id)
-                logger.info(
-                    "[ANALYSIS][EMAIL_TRIGGER] 邮件任务已触发 | task_id=%s", task_id,
-                )
-            except Exception as e:
-                logger.error(
-                    "[ANALYSIS][EMAIL_TRIGGER_FAIL] 邮件任务触发失败 | task_id=%s reason=%s",
-                    task_id, str(e), exc_info=True,
-                )
+            # try:
+            # from .email_tasks import send_analysis_email
+            # send_analysis_email.delay(task_id)
+            # logger.info(
+            # "[ANALYSIS][EMAIL_TRIGGER] 邮件任务已触发 | task_id=%s", task_id,
+            # )
+            # except Exception as e:
+            # logger.error(
+            # "[ANALYSIS][EMAIL_TRIGGER_FAIL] 邮件任务触发失败 | task_id=%s reason=%s",
+            # task_id, str(e), exc_info=True,
+#                 )
         else:
             error_msg = result.get("error", "未知错误")
             logger.error(
                 "[ANALYSIS][FAILED] 分析失败 | task_id=%s reason=%s",
                 task_id, error_msg,
+            )
+
+            # ── 判断是否可重试的错误（并发塞车 / 网络抖动）──
+            _TRANSIENT_KW = (
+                "503", "Server busy", "连接失败", "重试",
+                "超时", "Timeout", "ConnectError", "ConnectionError",
+                "RemoteDisconnected", "崩溃",
+            )
+            is_transient = any(kw in error_msg for kw in _TRANSIENT_KW)
+
+            if is_transient and self.request.retries < self.max_retries:
+                from celery.exceptions import Retry
+                countdown = 60 * (self.request.retries + 1)  # 60, 120, 180, 240, 300, 360s（线性，总覆盖21min）
+                logger.warning(
+                    "[ANALYSIS][RETRY_SCHEDULED] 临时故障，指数退避重试 | task_id=%s attempt=%d/%d countdown=%ds",
+                    task_id, self.request.retries + 1, self.max_retries, countdown,
+                )
+                # 不设FAILED状态，保持RUNNING让前端知道还在队列中
+                raise self.retry(countdown=countdown)
+
+            # ── 不可重试 or 重试耗尽 → 标记失败 + 退点券 ──
+            logger.error(
+                "[ANALYSIS][FINAL_FAIL] 分析最终失败（重试%d次后）| task_id=%s reason=%s",
+                self.request.retries, task_id, error_msg,
             )
             task.status = TaskStatus.FAILED
             task.progress = 1.0
@@ -106,7 +131,27 @@ def run_hermes_skill(self, task_id: str, skill_name: str, stock_code: str):
             task.updated_at = __import__("datetime").datetime.utcnow()
             db.commit()
 
+            # 退点券
+            try:
+                from ..models.user import User
+                if task.user_email:
+                    user = db.query(User).filter(User.email == task.user_email).first()
+                    if user:
+                        before = user.tickets
+                        user.tickets += 2
+                        db.commit()
+                        logger.info(
+                            "[ANALYSIS][REFUND] 分析失败退还点券 | task_id=%s user=%s %d→%d",
+                            task_id, task.user_email, before, user.tickets,
+                        )
+            except Exception as refund_err:
+                logger.error("[ANALYSIS][REFUND_FAIL] 退还点券失败 | task_id=%s %s", task_id, str(refund_err))
+
     except Exception as e:
+        from celery.exceptions import Retry
+        if isinstance(e, Retry):
+            raise  # 不要拦截——让 Celery 处理重试
+
         logger.error(
             "[ANALYSIS][CRASH] 分析任务崩溃 | task_id=%s reason=%s traceback=%s",
             task_id, str(e), traceback.format_exc(),
@@ -118,6 +163,22 @@ def run_hermes_skill(self, task_id: str, skill_name: str, stock_code: str):
                 task.error = str(e)
                 task.updated_at = __import__("datetime").datetime.utcnow()
                 db.commit()
+
+                # 崩溃也退点券
+                try:
+                    from ..models.user import User
+                    if task.user_email:
+                        user = db.query(User).filter(User.email == task.user_email).first()
+                        if user:
+                            before = user.tickets
+                            user.tickets += 2
+                            db.commit()
+                            logger.info(
+                                "[ANALYSIS][REFUND_CRASH] 崩溃退还点券 | task_id=%s user=%s %d→%d",
+                                task_id, task.user_email, before, user.tickets,
+                            )
+                except Exception:
+                    pass
         except Exception:
             pass
     finally:

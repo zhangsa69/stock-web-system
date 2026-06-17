@@ -43,7 +43,7 @@ async def start_analysis(
     if not u:
         raise HTTPException(status_code=404, detail="用户不存在")
     if u.tickets <= 0:
-        raise HTTPException(status_code=402, detail="点券余额不足，请先充值（每次分析消耗 1 点券）")
+        raise HTTPException(status_code=402, detail="点券余额不足，请先充值（每次分析消耗 2 点券）")
 
     # 检查缓存
     cached = await service.get_cached_task(req.stock_code, req.skill_name)
@@ -69,8 +69,8 @@ async def start_analysis(
         task.id, req.stock_code,
     )
 
-    # ── 扣除 1 点券（先扣再提交任务，失败则回滚）──
-    u.tickets -= 1
+    # ── 扣除 2 点券（先扣再提交任务，失败则回滚）──
+    u.tickets -= 2
     await db.flush()
 
     # 提交 Celery 异步任务
@@ -87,7 +87,7 @@ async def start_analysis(
         )
     except Exception as e:
         # Celery 提交失败 → 回滚点券
-        u.tickets += 1
+        u.tickets += 2
         await db.flush()
         logger.error(
             "[ANALYSIS][CELERY_FAIL] Celery提交失败，点券已回滚 | task_id=%s reason=%s balance=%d",
@@ -186,11 +186,14 @@ async def download_report(
     if not task.report:
         raise HTTPException(status_code=404, detail="报告内容为空")
 
-    filename = f"{task.stock_code}_{task.stock_name or task.stock_code}_分析报告.md"
+    from urllib.parse import quote
+    safe_name = f"{task.stock_code}_{task.stock_name or task.stock_code}"
+    filename = f"{safe_name}_分析报告.md"
+    encoded = quote(filename)
     return Response(
         content=task.report.encode("utf-8"),
         media_type="text/markdown; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
     )
 
 

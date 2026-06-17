@@ -1,10 +1,12 @@
 """认证服务：注册、验证码、登录、JWT"""
+import json
 import secrets
 import logging
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
+import redis.asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +31,48 @@ def verify_password(password: str, hashed: str) -> bool:
 def generate_verification_code() -> str:
     """生成6位数字验证码"""
     return str(secrets.randbelow(1_000_000)).zfill(6)
+
+
+# ============ Redis 待验证注册 ============
+
+PENDING_REGISTER_PREFIX = "pending_register:"
+PENDING_TTL = 600  # 10 分钟
+
+
+async def _get_redis():
+    return aioredis.from_url(settings.redis_url, decode_responses=True)
+
+
+async def _save_pending(email: str, password_hash: str, code: str):
+    """存待验证注册到 Redis，10 分钟过期"""
+    redis = await _get_redis()
+    key = f"{PENDING_REGISTER_PREFIX}{email}"
+    payload = json.dumps({
+        "password_hash": password_hash,
+        "code": code,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+    })
+    await redis.setex(key, PENDING_TTL, payload)
+    await redis.close()
+
+
+async def _load_pending(email: str) -> dict | None:
+    """从 Redis 取待验证注册"""
+    redis = await _get_redis()
+    key = f"{PENDING_REGISTER_PREFIX}{email}"
+    raw = await redis.get(key)
+    await redis.close()
+    if not raw:
+        return None
+    return json.loads(raw)
+
+
+async def _delete_pending(email: str):
+    """删除待验证注册"""
+    redis = await _get_redis()
+    key = f"{PENDING_REGISTER_PREFIX}{email}"
+    await redis.delete(key)
+    await redis.close()
 
 
 # ============ JWT ============
@@ -59,67 +103,62 @@ class AuthService:
         self.db = db
 
     async def register(self, email: str, password: str) -> tuple[bool, str]:
-        """注册新用户。返回 (成功, 消息)"""
+        """注册新用户 — 仅存 Redis，验证通过后才入库。返回 (成功, 消息)"""
         email = email.strip().lower()
 
-        # 检查是否已存在
+        # 1. 检查是否已验证用户（已在 PG 中）
         stmt = select(User).where(User.email == email)
         result = await self.db.execute(stmt)
         if result.scalar_one_or_none():
             return False, "该邮箱已注册"
 
+        # 2. 检查是否已有待验证注册（Redis 中）
+        pending = await _load_pending(email)
+        if pending:
+            return False, "验证码已发送，请检查邮箱（10分钟内有效）"
+
+        # 3. 生成验证码，存 Redis
         code = generate_verification_code()
-        expires = datetime.now(timezone.utc) + timedelta(minutes=10)
+        hashed = hash_password(password)
+        await _save_pending(email, hashed, code)
 
-        user = User(
-            email=email,
-            hashed_password=hash_password(password),
-            is_verified=False,
-            verification_code=code,
-            verification_code_expires_at=expires,
-        )
-        self.db.add(user)
-        await self.db.flush()
-
-        # 发送验证码邮件
+        # 4. 发送验证码邮件
         try:
             from ..services.email_service import EmailService
             await EmailService.send_verification_code(email, code)
         except Exception as e:
             logger.error("发送验证码失败: %s", str(e), exc_info=True)
+            await _delete_pending(email)  # 发邮件失败，清理 Redis
             return False, "验证码发送失败，请稍后重试"
 
-        logger.info("用户注册成功: %s", email)
+        logger.info("用户注册（待验证）: %s", email)
         return True, f"验证码已发送至 {email}，10分钟内有效"
 
     async def verify_email(self, email: str, code: str) -> tuple[bool, str]:
-        """验证邮箱"""
+        """验证邮箱 — 从 Redis 取待验证数据，验证通过才入库"""
         email = email.strip().lower()
         code = code.strip()
 
-        stmt = select(User).where(User.email == email)
-        result = await self.db.execute(stmt)
-        user = result.scalar_one_or_none()
+        # 1. 从 Redis 取待验证注册
+        pending = await _load_pending(email)
+        if not pending:
+            return False, "验证码已过期或未注册，请重新注册"
 
-        if not user:
-            return False, "用户不存在"
-
-        if user.is_verified:
-            return True, "邮箱已验证，无需重复验证"
-
-        if not user.verification_code or not user.verification_code_expires_at:
-            return False, "未发送验证码，请先注册"
-
-        if datetime.now(timezone.utc) > user.verification_code_expires_at:
-            return False, "验证码已过期，请重新注册"
-
-        if user.verification_code != code:
+        # 2. 验证验证码
+        if pending["code"] != code:
             return False, "验证码错误"
 
-        user.is_verified = True
-        user.verification_code = None
-        user.verification_code_expires_at = None
+        # 3. 验证通过 → 创建用户到 PG
+        user = User(
+            email=email,
+            hashed_password=pending["password_hash"],
+            is_verified=True,
+        )
+        self.db.add(user)
         await self.db.flush()
+
+        # 4. 清理 Redis
+        await _delete_pending(email)
 
         logger.info("邮箱验证成功: %s", email)
         return True, "邮箱验证成功"
