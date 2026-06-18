@@ -12,6 +12,18 @@ class VerifyEmailRequest(BaseModel):
     code: str = Field(..., min_length=6, max_length=6, description="6位验证码")
 
 
+class ForgotPasswordRequest(BaseModel):
+    """忘记密码 — 发送验证码"""
+    email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$", description="邮箱地址")
+
+
+class ResetPasswordRequest(BaseModel):
+    """重置密码 — 验证码 + 新密码"""
+    email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
+    code: str = Field(..., min_length=6, max_length=6, description="6位验证码")
+    new_password: str = Field(..., min_length=6, max_length=128, description="新密码（6-128字符）")
+
+
 class LoginRequest(BaseModel):
     email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
     password: str = Field(..., min_length=1, max_length=128)

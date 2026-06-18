@@ -11,6 +11,8 @@ from ..schemas.auth import (
     RegisterRequest,
     VerifyEmailRequest,
     LoginRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserInfo,
 )
@@ -55,6 +57,19 @@ async def verify_email(req: VerifyEmailRequest, db: AsyncSession = Depends(get_d
     return {"message": msg}
 
 
+async def _check_reset_rate(email: str):
+    """密码重置频率限制：同一邮箱 60 秒内只能发 1 次"""
+    redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        email_key = f"rate:reset:email:{email}"
+        if await redis.exists(email_key):
+            await redis.close()
+            raise HTTPException(status_code=429, detail="操作过于频繁，请60秒后再试")
+        await redis.setex(email_key, 60, "1")
+    finally:
+        await redis.close()
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     """用户登录 — 返回 JWT token"""
@@ -82,3 +97,24 @@ async def get_me(
         tickets=u.tickets,
         created_at=u.created_at.isoformat(),
     )
+
+
+@router.post("/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """忘记密码 — 发送重置验证码"""
+    await _check_reset_rate(req.email)
+    service = AuthService(db)
+    ok, msg = await service.forgot_password(req.email)
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"message": msg}
+
+
+@router.post("/reset-password")
+async def reset_password(req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """重置密码 — 验证码 + 新密码"""
+    service = AuthService(db)
+    ok, msg = await service.reset_password(req.email, req.code, req.new_password)
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"message": msg}

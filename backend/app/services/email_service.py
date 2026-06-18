@@ -71,6 +71,42 @@ class EmailService:
             return False
 
     @staticmethod
+    async def send_reset_code(to_email: str, code: str) -> bool:
+        """发送密码重置验证码（异步，不阻塞事件循环）"""
+        if not settings.smtp_host or not settings.smtp_user:
+            logger.error("[EMAIL_RESET] SMTP未配置")
+            return False
+
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["From"] = settings.smtp_from
+            msg["To"] = to_email
+            msg["Subject"] = "【元基财报】密码重置验证码"
+
+            html_body = f"""\
+<html><body style="font-family: Arial, sans-serif; padding: 20px;">
+  <h2 style="color: #D4A843;">元基财报分析引擎</h2>
+  <p>您正在申请重置密码，验证码如下：</p>
+  <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px;
+              color: #0A1929; background: #F0C060; display: inline-block;
+              padding: 12px 24px; border-radius: 8px; margin: 16px 0;">
+    {code}
+  </div>
+  <p style="color: #666; margin-top: 20px;">验证码 10 分钟内有效。如非本人操作，请忽略此邮件。</p>
+</body></html>"""
+            msg.attach(MIMEText(f"您的密码重置验证码是：{code}，10分钟内有效。如非本人操作，请忽略。", "plain", "utf-8"))
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+            await asyncio.to_thread(_send_sync, msg)
+
+            logger.info("[EMAIL_RESET] 重置码已发送: %s", to_email)
+            return True
+
+        except Exception as e:
+            logger.error("[EMAIL_RESET] 发送失败: %s reason=%s", to_email, str(e))
+            return False
+
+    @staticmethod
     def send_report_email(
         to_email: str,
         stock_code: str,

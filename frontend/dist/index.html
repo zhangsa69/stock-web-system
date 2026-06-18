@@ -2082,6 +2082,9 @@ a:hover { text-decoration: underline; }
           <div class="form-group">
             <button type="submit" class="btn btn-primary" id="loginBtn">登录</button>
           </div>
+          <p style="text-align:right;margin-top:4px;font-size:13px;">
+            <a href="#" onclick="showForgotPassword()" style="color:var(--accent);">忘记密码？</a>
+          </p>
         </form>
 
         <!-- Register Form -->
@@ -2117,6 +2120,42 @@ a:hover { text-decoration: underline; }
           <div class="form-group">
             <button type="submit" class="btn btn-primary" id="verifyBtn">验证</button>
           </div>
+        </form>
+
+        <!-- Reset Request Form (Step 1: enter email) -->
+        <form class="auth-form" id="form-reset-request" onsubmit="handleForgotPassword(event)">
+          <div class="form-group">
+            <label>请输入注册邮箱</label>
+            <input type="email" id="resetEmail" placeholder="your@email.com" required>
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary" id="resetRequestBtn">发送验证码</button>
+          </div>
+          <p style="text-align:center;margin-top:8px;font-size:13px;">
+            <a href="#" onclick="switchAuthTab('login')" style="color:var(--text-tertiary);">← 返回登录</a>
+          </p>
+        </form>
+
+        <!-- Reset Confirm Form (Step 2: enter code + new password) -->
+        <form class="auth-form" id="form-reset-confirm" onsubmit="handleResetPassword(event)">
+          <div class="form-group">
+            <label>验证码</label>
+            <input type="text" id="resetCode" placeholder="输入邮箱收到的验证码" required>
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input type="password" id="resetNewPassword" placeholder="至少6位字符" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label>确认新密码</label>
+            <input type="password" id="resetNewPasswordConfirm" placeholder="再次输入新密码" required minlength="6">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary" id="resetConfirmBtn">重置密码</button>
+          </div>
+          <p style="text-align:center;margin-top:8px;font-size:13px;">
+            <a href="#" onclick="switchAuthTab('login')" style="color:var(--text-tertiary);">← 返回登录</a>
+          </p>
         </form>
 
         <div class="auth-footer">
@@ -2482,6 +2521,81 @@ async function handleVerify(e) {
     showAuthError(err.message);
   } finally {
     btn.textContent = '验证';
+    btn.disabled = false;
+  }
+}
+
+function showForgotPassword() {
+  // Switch to reset password flow
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('form-reset-request').classList.add('active');
+  clearAuthMessages();
+  // Pre-fill email from login form if available
+  var loginEmail = document.getElementById('loginEmail').value.trim();
+  if (loginEmail) document.getElementById('resetEmail').value = loginEmail;
+}
+
+async function handleForgotPassword(e) {
+  e.preventDefault();
+  clearAuthMessages();
+  var email = document.getElementById('resetEmail').value.trim();
+  var btn = document.getElementById('resetRequestBtn');
+  btn.textContent = '发送中...';
+  btn.disabled = true;
+
+  try {
+    var data = await apiFetch('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: email })
+    });
+    showAuthSuccess(data.message || '验证码已发送');
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.getElementById('form-reset-confirm').classList.add('active');
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.textContent = '发送验证码';
+    btn.disabled = false;
+  }
+}
+
+async function handleResetPassword(e) {
+  e.preventDefault();
+  clearAuthMessages();
+  var email = document.getElementById('resetEmail').value.trim();
+  var code = document.getElementById('resetCode').value.trim();
+  var pwd = document.getElementById('resetNewPassword').value;
+  var confirm = document.getElementById('resetNewPasswordConfirm').value;
+  var btn = document.getElementById('resetConfirmBtn');
+
+  if (pwd !== confirm) {
+    showAuthError('两次密码输入不一致');
+    return;
+  }
+  if (pwd.length < 6) {
+    showAuthError('密码长度至少6位');
+    return;
+  }
+
+  btn.textContent = '重置中...';
+  btn.disabled = true;
+
+  try {
+    var data = await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: email, code: code, new_password: pwd })
+    });
+    showAuthSuccess('密码重置成功！请使用新密码登录');
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('resetCode').value = '';
+    document.getElementById('resetNewPassword').value = '';
+    document.getElementById('resetNewPasswordConfirm').value = '';
+    setTimeout(function() { switchAuthTab('login'); }, 1500);
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.textContent = '重置密码';
     btn.disabled = false;
   }
 }

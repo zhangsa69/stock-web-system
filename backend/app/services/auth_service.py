@@ -75,6 +75,43 @@ async def _delete_pending(email: str):
     await redis.close()
 
 
+# ============ Redis 密码重置 ============
+
+PASSWORD_RESET_PREFIX = "password_reset:"
+RESET_TTL = 600  # 10 分钟
+
+
+async def _save_reset_code(email: str, code: str):
+    """存密码重置验证码到 Redis，10 分钟过期"""
+    redis = await _get_redis()
+    key = f"{PASSWORD_RESET_PREFIX}{email}"
+    payload = json.dumps({
+        "code": code,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+    })
+    await redis.setex(key, RESET_TTL, payload)
+    await redis.close()
+
+
+async def _load_reset_code(email: str) -> dict | None:
+    """从 Redis 取密码重置验证码"""
+    redis = await _get_redis()
+    key = f"{PASSWORD_RESET_PREFIX}{email}"
+    raw = await redis.get(key)
+    await redis.close()
+    if not raw:
+        return None
+    return json.loads(raw)
+
+
+async def _delete_reset_code(email: str):
+    """删除密码重置验证码"""
+    redis = await _get_redis()
+    key = f"{PASSWORD_RESET_PREFIX}{email}"
+    await redis.delete(key)
+    await redis.close()
+
+
 # ============ JWT ============
 
 def create_access_token(user_id: str, email: str) -> str:
@@ -162,6 +199,69 @@ class AuthService:
 
         logger.info("邮箱验证成功: %s", email)
         return True, "邮箱验证成功"
+
+    async def forgot_password(self, email: str) -> tuple[bool, str]:
+        """忘记密码 — 发送重置验证码。返回 (成功, 消息)"""
+        email = email.strip().lower()
+
+        # 1. 检查用户是否存在
+        user = await self.get_user_by_email(email)
+        if not user:
+            logger.info("[FORGOT_PW] 未注册邮箱尝试重置: %s", email)
+            return True, "如果该邮箱已注册，验证码将发送至您的邮箱"
+
+        if not user.is_verified:
+            return False, "该邮箱尚未完成验证，请先完成注册验证"
+
+        # 2. 检查是否已有未过期的重置码
+        existing = await _load_reset_code(email)
+        if existing:
+            return False, "验证码已发送，请检查邮箱（10分钟内有效）"
+
+        # 3. 生成验证码，存 Redis
+        code = generate_verification_code()
+        await _save_reset_code(email, code)
+
+        # 4. 发送验证码邮件
+        try:
+            from ..services.email_service import EmailService
+            await EmailService.send_reset_code(email, code)
+        except Exception as e:
+            logger.error("[FORGOT_PW] 发送重置码失败: %s reason=%s", email, str(e))
+            await _delete_reset_code(email)
+            return False, "验证码发送失败，请稍后重试"
+
+        logger.info("[FORGOT_PW] 重置码已发送: %s", email)
+        return True, "验证码已发送，请检查邮箱（10分钟内有效）"
+
+    async def reset_password(self, email: str, code: str, new_password: str) -> tuple[bool, str]:
+        """重置密码。返回 (成功, 消息)"""
+        email = email.strip().lower()
+        code = code.strip()
+
+        # 1. 从 Redis 取重置验证码
+        stored = await _load_reset_code(email)
+        if not stored:
+            return False, "验证码已过期，请重新获取"
+
+        # 2. 验证验证码
+        if stored["code"] != code:
+            return False, "验证码错误"
+
+        # 3. 更新密码
+        user = await self.get_user_by_email(email)
+        if not user:
+            return False, "用户不存在"
+
+        user.hashed_password = hash_password(new_password)
+        await self.db.flush()
+        await self.db.commit()
+
+        # 4. 清理 Redis 重置码
+        await _delete_reset_code(email)
+
+        logger.info("[FORGOT_PW] 密码重置成功: %s", email)
+        return True, "密码重置成功，请使用新密码登录"
 
     async def login(self, email: str, password: str) -> tuple[str | None, str]:
         """登录。返回 (token, 消息)"""
