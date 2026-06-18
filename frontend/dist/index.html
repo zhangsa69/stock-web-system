@@ -693,6 +693,7 @@ a:hover { text-decoration: underline; }
   height: 100%;
   border-radius: 16px;
   position: relative;
+  overflow: hidden;
 }
 
 .pricing-card .front,
@@ -721,8 +722,11 @@ a:hover { text-decoration: underline; }
   position: absolute;
   content: '';
   display: block;
-  width: 120px;
-  height: 160%;
+  width: 140%;
+  height: 30px;
+  top: 50%;
+  left: -20%;
+  transform: translateY(-50%);
   background: linear-gradient(90deg, transparent, var(--accent), var(--accent), var(--accent), transparent);
   animation: recharge-rotate 4000ms infinite linear;
 }
@@ -858,15 +862,16 @@ a:hover { text-decoration: underline; }
 .pricing-card .front .decor-1 {
   width: 80px; height: 80px;
   background: var(--accent);
-  top: -20px; right: -20px;
+  top: -10px; right: -10px;
   animation-delay: 0ms;
+  opacity: 0.2;
 }
-
 .pricing-card .front .decor-2 {
   width: 60px; height: 60px;
   background: #ff6b35;
-  bottom: 40px; left: -15px;
+  bottom: 50px; left: -10px;
   animation-delay: -1000ms;
+  opacity: 0.2;
 }
 
 .pricing-card.recommended .front .decor-1 {
