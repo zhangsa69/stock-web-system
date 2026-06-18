@@ -1709,21 +1709,6 @@ a:hover { text-decoration: underline; }
   </div>
 </section>
 
-<!-- ==================== SAMPLE REPORT PAGE ==================== -->
-<section class="page" id="page-sample-report">
-  <div class="section-lg">
-    <div class="container-sm">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-        <button class="btn btn-ghost btn-sm" onclick="navigate('home')" style="padding:6px 12px">← 返回首页</button>
-        <h2 class="section-title" style="margin:0" id="sampleReportTitle">示例报告</h2>
-      </div>
-      <div id="sampleReportContent" style="background:var(--card-bg);border-radius:16px;padding:32px;line-height:1.8;font-size:15px;color:var(--text);white-space:pre-wrap;word-wrap:break-word">
-        <div class="analysis-loading"><div class="loader-ring"></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ==================== LOGIN PAGE ==================== -->
 <section class="page" id="page-login">
   <div class="section-lg">
@@ -2173,60 +2158,9 @@ function quickAnalyze(code) {
   startAnalysis();
 }
 
-// ===== 示例报告查看 =====
-let currentSampleReport = null;
-
-async function viewSampleReport(code, name) {
-  document.getElementById('sampleReportTitle').textContent = name + '（' + code + '）';
-  const contentEl = document.getElementById('sampleReportContent');
-  contentEl.innerHTML = '<div class="analysis-loading"><div class="loader-ring"></div></div>';
-  navigate('sample-report');
-  try {
-    const resp = await fetch(API_BASE + '/samples/' + code);
-    if (!resp.ok) throw new Error('报告加载失败');
-    const data = await resp.json();
-    currentSampleReport = data;
-    const md = data.report || '(报告内容为空)';
-    const html = simpleMarkdownToHtml(md);
-    contentEl.innerHTML = html;
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-primary';
-    btn.style.cssText = 'margin-top:24px';
-    btn.textContent = '📥 下载 Markdown';
-    btn.onclick = function() { downloadSampleReport(code, name); };
-    contentEl.appendChild(btn);
-  } catch (err) {
-    contentEl.innerHTML = '<p style="color:var(--error);text-align:center;padding:48px">加载失败: ' + err.message + '</p>';
-  }
-}
-
-function downloadSampleReport(code, name) {
-  if (!currentSampleReport || !currentSampleReport.report) return;
-  const blob = new Blob([currentSampleReport.report], {type: 'text/markdown;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name + '_' + code + '_分析报告.md';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// 简易 Markdown → HTML
-function simpleMarkdownToHtml(md) {
-  return md
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:20px;font-weight:600;margin:24px 0 12px;color:var(--accent)">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 style="font-size:22px;font-weight:700;margin:28px 0 14px;color:var(--text)">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 style="font-size:26px;font-weight:700;margin:32px 0 16px;color:var(--text)">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(0,113,227,0.08);padding:2px 6px;border-radius:4px;font-size:13px">$1</code>')
-    .replace(/^- (.+)$/gm, '<li style="margin-left:20px">$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li style="margin-left:20px">$2</li>')
-    .replace(/\n\n/g, '</p><p style="margin:8px 0">')
-    .replace(/^(.+)$/gm, '<p style="margin:8px 0">$1</p>');
+// ===== 示例报告查看（使用 md-reader 阅读器）=====
+function viewSampleReport(code, name) {
+  window.open('/md-reader.html?sample=' + code, '_blank');
 }
 
 async function startAnalysis() {
