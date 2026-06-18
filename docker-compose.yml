@@ -31,6 +31,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # PDF 缓存目录
       - ./docker-data/pdf_cache:/app/pdf_cache
+      # 示例报告库（只读）
+      - ./docker-data/sample_reports.db:/app/sample_reports.db:ro
     ports:
       - "8000:8000"
     depends_on:

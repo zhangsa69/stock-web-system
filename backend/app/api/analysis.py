@@ -2,6 +2,8 @@
 分析 API 路由
 """
 import logging
+import sqlite3
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy import select
@@ -17,6 +19,8 @@ from ..services.analysis_service import AnalysisService
 from ..models.analysis import TaskStatus
 from ..models.user import User
 from ..utils.auth import get_current_user, get_optional_user
+
+SAMPLE_DB_PATH = Path("/app/sample_reports.db")
 
 logger = logging.getLogger("stock-analysis.api")
 router = APIRouter()
@@ -42,11 +46,11 @@ async def start_analysis(
     u = user_result.scalar_one_or_none()
     if not u:
         raise HTTPException(status_code=404, detail="用户不存在")
-    if u.tickets <= 0:
-        raise HTTPException(status_code=402, detail="点券余额不足，请先充值（每次分析消耗 2 点券）")
+    if u.tickets < 2:
+        raise HTTPException(status_code=402, detail="点券余额不足（需至少 2 点券），请先充值")
 
-    # 检查缓存
-    cached = await service.get_cached_task(req.stock_code, req.skill_name, email)
+    # 检查缓存（per-user：同一用户7天内分析过同一股票则直接返回）
+    cached = await service.get_cached_task(req.stock_code, req.skill_name, user_email=email)
     if cached:
         logger.info(
             "[ANALYSIS][CACHE_HIT] 命中缓存 | task_id=%s stock_code=%s",
@@ -145,14 +149,11 @@ async def get_analysis_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
 ):
-    """获取分析历史列表（仅返回当前用户的报告）"""
-    email = user["email"]
+    """获取分析历史列表"""
     service = AnalysisService(db)
-    total = await service.get_history_count(email)
+    total = await service.get_history_count()
     items = await service.get_history(
-        user_email=email,
         limit=page_size,
         offset=(page - 1) * page_size,
     )
@@ -198,6 +199,29 @@ async def download_report(
         media_type="text/markdown; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
     )
+
+
+@router.get("/samples/{stock_code}")
+async def get_sample_report(stock_code: str):
+    """读取示例报告（无需登录，展示用）"""
+    if not SAMPLE_DB_PATH.exists():
+        raise HTTPException(status_code=503, detail="示例报告库暂不可用")
+    try:
+        conn = sqlite3.connect(str(SAMPLE_DB_PATH))
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT stock_code, stock_name, report FROM sample_reports WHERE stock_code=?",
+            (stock_code,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="示例报告不存在")
+        return {
+            "stock_code": row["stock_code"],
+            "stock_name": row["stock_name"],
+            "report": row["report"],
+        }
+    finally:
+        conn.close()
 
 
 @router.get("/health")
