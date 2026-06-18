@@ -35,6 +35,8 @@
 }
 
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Belt-and-suspenders: WeChat X5 browser ignores html-level text-size-adjust sometimes */
+body, body * { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
@@ -64,6 +66,7 @@ a:hover { text-decoration: underline; }
 .nav-inner {
   max-width: 1200px; width: 100%; margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
+  min-width: 0; overflow: hidden;
 }
 
 .nav-logo {
@@ -71,7 +74,9 @@ a:hover { text-decoration: underline; }
   letter-spacing: -0.3px;
   display: flex; align-items: center; gap: 8px;
   cursor: pointer; user-select: none;
+  flex-shrink: 1; min-width: 0;
 }
+.nav-logo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .nav-logo .logo-icon {
   width: 32px; height: 32px;
@@ -87,7 +92,7 @@ a:hover { text-decoration: underline; }
 }
 .nav-links a:hover, .nav-links a.active { color: var(--text); text-decoration: none; }
 
-.nav-actions { display: flex; align-items: center; gap: 12px; }
+.nav-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; max-width: 100%; overflow: hidden; }
 
 .nav-toggle {
   display: none;
@@ -1271,13 +1276,14 @@ a:hover { text-decoration: underline; }
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   /* Navigation */
-  .nav { padding: 0 16px; }
+  .nav { padding: 0 12px; }
   .nav-links { display: none; }
   .nav-toggle { display: flex; }
   .nav-actions .balance-badge { display: none; }
   .nav-actions #navUserEmail { display: none; }
-  .nav-actions .nav-account-mob { display: inline; }
-  .nav-actions .btn { font-size: 12px; padding: 8px 14px; }
+  .nav-actions .nav-account-mob { display: inline; font-size: 13px; max-width: 120px; }
+  .nav-actions .btn { font-size: 13px; padding: 7px 12px; min-height: 36px; }
+  .nav-logo { font-size: 17px; }
 
   /* Hero */
   .hero { padding: 48px 16px 40px; }
@@ -1435,13 +1441,20 @@ a:hover { text-decoration: underline; }
   .pricing-card .back-credits { font-size: 26px; }
   .pricing-card .front .detail-price { font-size: 18px; }
   .pricing-card .front .detail-title strong { font-size: 12px; }
-  .pricing-card .front .detail-desc { font-size: 10px; }
+  .pricing-card .front .detail-desc { font-size: 11px; }
   .redeem-row { flex-direction: column; }
   .redeem-row .btn { width: 100%; }
   .nav-mobile a { font-size: 15px; padding: 12px 14px; }
   .section-title { font-size: 22px; }
   .btn { font-size: 13px; }
   .btn-large { padding: 12px 24px; font-size: 14px; }
+
+  /* ── Nav bar ulta-compact ── */
+  .nav { padding: 0 8px; height: 48px; }
+  .nav-logo { font-size: 15px; gap: 4px; }
+  .nav-logo .logo-icon { width: 28px; height: 28px; font-size: 14px; border-radius: 6px; }
+  .nav-account-mob { font-size: 12px !important; max-width: 100px !important; }
+  .nav-actions .btn { font-size: 12px; padding: 6px 10px; min-height: 32px; }
 
   /* ── Touch-friendly sizing ── */
   .btn, .purchase-cta { min-height: 44px; }
@@ -1452,7 +1465,7 @@ a:hover { text-decoration: underline; }
   /* ── Pricing card text ── */
   .pricing-card .front .detail-title strong { font-size: 11px; }
   .pricing-card .front .detail-price { font-size: 16px; }
-  .pricing-card .front .detail-desc { font-size: 9px; line-height: 1.4; }
+  .pricing-card .front .detail-desc { font-size: 11px; line-height: 1.4; }
   .pricing-card .front .badge { font-size: 9px; padding: 2px 8px; }
   .pricing-card .purchase-cta { font-size: 11px; padding: 8px 0; }
 
@@ -2643,11 +2656,13 @@ function updateNavAuth() {
       </span>
       <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
     `;
-    // Try to load user info
+    // Show balance immediately — don't wait for async /auth/me
+    loadBalance();
+    // Try to load user info for email display
     apiFetch('/auth/me').then(data => {
       currentUserEmail = data.email || '';
       document.getElementById('navUserEmail').textContent = currentUserEmail;
-      // Update mobile compact display
+      // Update mobile compact display with email
       const mobEl = document.getElementById('navAccountMob');
       if (mobEl && currentUserEmail) {
         const short = currentUserEmail.includes('@')
