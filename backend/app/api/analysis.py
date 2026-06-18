@@ -46,7 +46,7 @@ async def start_analysis(
         raise HTTPException(status_code=402, detail="点券余额不足，请先充值（每次分析消耗 2 点券）")
 
     # 检查缓存
-    cached = await service.get_cached_task(req.stock_code, req.skill_name)
+    cached = await service.get_cached_task(req.stock_code, req.skill_name, email)
     if cached:
         logger.info(
             "[ANALYSIS][CACHE_HIT] 命中缓存 | task_id=%s stock_code=%s",
@@ -145,11 +145,14 @@ async def get_analysis_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
-    """获取分析历史列表"""
+    """获取分析历史列表（仅返回当前用户的报告）"""
+    email = user["email"]
     service = AnalysisService(db)
-    total = await service.get_history_count()
+    total = await service.get_history_count(email)
     items = await service.get_history(
+        user_email=email,
         limit=page_size,
         offset=(page - 1) * page_size,
     )

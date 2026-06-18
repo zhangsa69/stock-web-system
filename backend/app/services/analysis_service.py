@@ -46,21 +46,22 @@ class AnalysisService:
         )
         return result.scalar_one_or_none()
 
-    async def get_history(self, limit: int = 50, offset: int = 0) -> list[AnalysisTask]:
-        """查询分析历史"""
+    async def get_history(self, user_email: str, limit: int = 50, offset: int = 0) -> list[AnalysisTask]:
+        """查询分析历史（按用户过滤）"""
         result = await self.db.execute(
             select(AnalysisTask)
+            .where(AnalysisTask.user_email == user_email)
             .order_by(desc(AnalysisTask.created_at))
             .limit(limit)
             .offset(offset)
         )
         return list(result.scalars().all())
 
-    async def get_history_count(self) -> int:
-        """查询分析历史总数"""
+    async def get_history_count(self, user_email: str) -> int:
+        """查询分析历史总数（按用户过滤）"""
         from sqlalchemy import func
         result = await self.db.execute(
-            select(func.count()).select_from(AnalysisTask)
+            select(func.count()).select_from(AnalysisTask).where(AnalysisTask.user_email == user_email)
         )
         return result.scalar() or 0
 
@@ -98,8 +99,8 @@ class AnalysisService:
             task_id, status.value, progress,
         )
 
-    async def get_cached_task(self, stock_code: str, skill_name: str) -> AnalysisTask | None:
-        """查找同一股票在缓存期内的已完成分析"""
+    async def get_cached_task(self, stock_code: str, skill_name: str, user_email: str) -> AnalysisTask | None:
+        """查找同一用户在同一股票在缓存期内的已完成分析"""
         cache_days = settings.analysis_cache_days
         cutoff = datetime.utcnow() - timedelta(days=cache_days)
         result = await self.db.execute(
@@ -107,6 +108,7 @@ class AnalysisService:
             .where(
                 AnalysisTask.stock_code == stock_code,
                 AnalysisTask.skill_name == skill_name,
+                AnalysisTask.user_email == user_email,
                 AnalysisTask.status == TaskStatus.COMPLETED,
                 AnalysisTask.created_at >= cutoff,
             )

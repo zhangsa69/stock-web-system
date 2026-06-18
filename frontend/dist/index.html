@@ -2832,7 +2832,7 @@ async function startAnalysis() {
       method: 'POST',
       body: JSON.stringify({ stock_code: code })
     });
-    currentAnalysisId = data.id || data.analysis_id;
+    currentAnalysisId = data.task_id;
     loadBalance();  // 立即刷新点券余额（后端已扣除2点券）
     // Start polling in background + countdown
     pollAnalysisStatus(currentAnalysisId);
