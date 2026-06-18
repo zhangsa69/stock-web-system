@@ -1588,17 +1588,17 @@ a:hover { text-decoration: underline; }
 <!-- ==================== NAVIGATION ==================== -->
 <nav class="nav">
   <div class="nav-inner">
+    <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="菜单"><span></span></button>
     <div class="nav-logo" onclick="navigate('home')">
       <div class="logo-icon">元</div>
       <span>元基财报</span>
     </div>
     <div class="nav-links" id="navLinks">
-    <button class="nav-toggle" id="navToggle" onclick="toggleMobileNav()" aria-label="菜单"><span></span></button>
       <a onclick="navigate('home')" data-nav="home" class="active">首页</a>
       <a onclick="scrollToSection('pricingSection')" data-nav="pricing">定价</a>
       <a onclick="scrollToSection('rechargeSection')" data-nav="recharge">充值</a>
       <a onclick="navigate('history')" data-nav="history">我的分析</a>
-      <a onclick="scrollToSection('aboutSection')" data-nav="about">关于</a>
+      <a onclick="scrollToSection('aboutSection')" data-nav="about">获取联系</a>
     </div>
     <div class="nav-actions" id="navActions">
       <!-- Populated by JS -->
@@ -1612,7 +1612,7 @@ a:hover { text-decoration: underline; }
   <a onclick="scrollToSection('pricingSection');closeMobileNav()" data-mob-nav="pricing">💎 定价方案</a>
   <a onclick="scrollToSection('rechargeSection');closeMobileNav()" data-mob-nav="recharge">🪙 点券充值</a>
   <a onclick="navigate('history');closeMobileNav()" data-mob-nav="history">📋 我的分析</a>
-  <a onclick="scrollToSection('aboutSection');closeMobileNav()" data-mob-nav="about">ℹ️ 关于我们</a>
+  <a onclick="scrollToSection('aboutSection');closeMobileNav()" data-mob-nav="about">ℹ️ 获取联系</a>
   <div class="mobile-balance" id="mobileBalance" style="display:none"></div>
 </div>
 
@@ -1806,7 +1806,7 @@ a:hover { text-decoration: underline; }
   <div class="section" id="rechargeSection" style="background: var(--bg-soft);">
     <div class="container">
       <h2 class="section-title">点券充值</h2>
-      <p class="section-subtitle">每次分析消耗1点券，选择适合你的方案</p>
+      <p class="section-subtitle">每次分析消耗 2 点券，选择适合你的方案</p>
       <div class="pricing-grid">
         <!-- 1点券 -->
         <div class="pricing-card">
@@ -1945,7 +1945,7 @@ a:hover { text-decoration: underline; }
       <p style="text-align:center;font-size:14px;color:var(--text-tertiary);margin-top:4px">美股分析正在抓耳挠腮开发中...</p>
       <!-- 关注我 -->
       <div style="margin-top:40px;padding-top:32px;border-top:1px solid var(--border-light)">
-        <p style="text-align:center;font-size:15px;font-weight:600;color:var(--text);margin-bottom:20px">关注我</p>
+        <p style="text-align:center;font-size:15px;font-weight:600;color:var(--text);margin-bottom:20px">获取联系</p>
         <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap">
           <a href="https://xhslink.com/m/6p6sI0k0jYz" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);text-decoration:none;transition:color 0.25s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-secondary)'">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -2635,8 +2635,8 @@ function startAnalysisFromHero() {
     navigate('login');
     return;
   }
-  if (currentBalance <= 0) {
-    showToast('点券余额不足，请先充值', 'error');
+  if (currentBalance < 2) {
+    showToast('点券余额不足（需至少2点券），请先充值', 'error');
     goRecharge();
     return;
   }
@@ -2654,8 +2654,8 @@ function quickAnalyze(code) {
     navigate('login');
     return;
   }
-  if (currentBalance <= 0) {
-    showToast('点券余额不足，请先充值', 'error');
+  if (currentBalance < 2) {
+    showToast('点券余额不足（需至少2点券），请先充值', 'error');
     goRecharge();
     return;
   }
@@ -2678,8 +2678,8 @@ async function startAnalysis() {
     navigate('login');
     return;
   }
-  if (currentBalance <= 0) {
-    showToast('点券余额不足，请先充值', 'error');
+  if (currentBalance < 2) {
+    showToast('点券余额不足（需至少2点券），请先充值', 'error');
     goRecharge();
     return;
   }
@@ -2699,6 +2699,7 @@ async function startAnalysis() {
       body: JSON.stringify({ stock_code: code })
     });
     currentAnalysisId = data.id || data.analysis_id;
+    loadBalance();  // 立即刷新点券余额（后端已扣除2点券）
     // Start polling in background + countdown
     pollAnalysisStatus(currentAnalysisId);
     startCountdown();
@@ -2828,7 +2829,7 @@ async function downloadLatestReport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'report_' + currentAnalysisId + '.pdf';
+    a.download = 'report_' + currentAnalysisId + '.md';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -2867,7 +2868,7 @@ async function loadHistory() {
       const statusText = status === 'completed' || status === 'done' ? '已完成' :
                          status === 'failed' || status === 'error' ? '失败' : '处理中';
       const createdAt = item.created_at || item.createdAt || item.time || '';
-      const dateStr = createdAt ? new Date(createdAt).toLocaleString('zh-CN') : '-';
+      const dateStr = createdAt ? new Date(createdAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) + ' 北京时间' : '-';
       const stockName = item.stock_name || item.name || '-';
 
       let actionHtml = '';
@@ -2905,7 +2906,7 @@ async function downloadReport(id) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'report_' + id + '.pdf';
+    a.download = 'report_' + id + '.md';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
