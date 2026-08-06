@@ -1,6 +1,6 @@
 # 元基财报分析引擎
 
-> 基于企业财报深挖核心基本面的超级 AI 分析平台 访问https://miaoousc.com
+> 基于企业财报深挖核心基本面的超级 AI 分析平台 访问https://miaoousc.xyz
 
 [![Deploy](https://img.shields.io/badge/deploy-Docker%20Compose-blue)](https://github.com/zhangsa69/stock-web-system)
 [![Frontend](https://img.shields.io/badge/frontend-纯HTML%20SPA-green)](#)
