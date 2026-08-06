@@ -60,6 +60,13 @@ class CodeListResponse(BaseModel):
     total: int
     items: list[CodeItem]
 
+class DeleteCodesRequest(BaseModel):
+    ids: list[str]
+
+class DeleteCodesResponse(BaseModel):
+    deleted: int
+    message: str
+
 class UserItem(BaseModel):
     id: str
     email: str
@@ -70,6 +77,9 @@ class UserItem(BaseModel):
 class UserListResponse(BaseModel):
     total: int
     items: list[UserItem]
+
+class AdjustTicketsRequest(BaseModel):
+    amount: int  # 正数=增加，负数=减少
 
 class ImportResult(BaseModel):
     imported: int
@@ -226,6 +236,7 @@ async def list_codes(
     page_size: int = Query(50, ge=1, le=200),
     search: str = Query("", description="搜索卡密"),
     used_filter: str = Query("all", description="all/used/unused"),
+    ticket_value: int = Query(0, description="按面值筛选，0=全部"),
     db: AsyncSession = Depends(get_db),
     admin: dict = Depends(get_current_admin),
 ):
@@ -236,6 +247,9 @@ async def list_codes(
         q = q.where(RechargeCode.is_used == True)
     elif used_filter == "unused":
         q = q.where(RechargeCode.is_used == False)
+
+    if ticket_value > 0:
+        q = q.where(RechargeCode.ticket_value == ticket_value)
 
     if search:
         q = q.where(RechargeCode.code.ilike(f"%{search}%"))
@@ -276,11 +290,22 @@ async def import_codes(
     """导入卡密 CSV（每行一个卡密）"""
     import uuid
 
-    if ticket_value not in (1, 20):
-        raise HTTPException(status_code=400, detail="ticket_value 只能是 1 或 20")
+    if ticket_value not in (2, 30, 50, 100):
+        raise HTTPException(status_code=400, detail="ticket_value 只能是 2 / 30 / 50 / 100")
 
     content = (await file.read()).decode("utf-8", errors="replace")
-    lines = [l.strip() for l in content.split("\n") if l.strip()]
+    # 解析每一行：去掉首尾空白/逗号/引号；支持 CSV 格式（取第一列）
+    raw_lines = [l.strip() for l in content.split("\n")]
+    lines = []
+    for l in raw_lines:
+        if not l:
+            continue
+        # 如果是 CSV 格式（含逗号），取第一列
+        code = l.split(",")[0]
+        # 去掉首尾空白、引号、逗号
+        code = code.strip().strip('"').strip("'").strip(",").strip()
+        if code:
+            lines.append(code)
 
     imported = 0
     skipped = 0
@@ -311,6 +336,38 @@ async def import_codes(
         skipped=skipped,
         message=f"成功导入 {imported} 条，跳过 {skipped} 条（已存在）",
     )
+
+
+@router.delete("/codes", response_model=DeleteCodesResponse)
+async def delete_codes(
+    req: DeleteCodesRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: dict = Depends(get_current_admin),
+):
+    """批量删除卡密"""
+    if not req.ids:
+        raise HTTPException(status_code=400, detail="请提供要删除的卡密 ID")
+
+    # 只删除未使用的卡密，防止误删已核销的
+    stmt = select(RechargeCode).where(
+        RechargeCode.id.in_(req.ids),
+        RechargeCode.is_used == False,
+    )
+    result = await db.execute(stmt)
+    codes = result.scalars().all()
+
+    for c in codes:
+        await db.delete(c)
+
+    await db.commit()
+
+    skipped = len(req.ids) - len(codes)
+    msg = f"成功删除 {len(codes)} 条"
+    if skipped > 0:
+        msg += f"，跳过 {skipped} 条（已使用不可删除）"
+
+    logger.info("[ADMIN] 批量删除卡密 | total=%d deleted=%d skipped=%d", len(req.ids), len(codes), skipped)
+    return DeleteCodesResponse(deleted=len(codes), message=msg)
 
 
 # ── 用户管理 ──
@@ -348,3 +405,55 @@ async def list_users(
             for u in users
         ],
     )
+
+
+@router.post("/users/{user_id}/tickets")
+async def adjust_user_tickets(
+    user_id: str,
+    req: AdjustTicketsRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: dict = Depends(get_current_admin),
+):
+    """管理员调整用户点券余额（正数增加，负数减少）"""
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    new_balance = user.tickets + req.amount
+    if new_balance < 0:
+        raise HTTPException(status_code=400, detail=f"余额不足，当前 {user.tickets} 点券，不能扣 {abs(req.amount)}")
+
+    user.tickets = new_balance
+    await db.commit()
+
+    logger.info(
+        "[ADMIN] 调整点券 | user=%s amount=%+d balance_before=%d balance_after=%d by=%s",
+        user.email, req.amount, user.tickets - req.amount, user.tickets, admin["email"],
+    )
+    return {"message": "调整成功", "tickets": user.tickets}
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+    admin: dict = Depends(get_current_admin),
+):
+    """管理员删除用户"""
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    # 管理员不能删除自己
+    if user.email == admin["email"]:
+        raise HTTPException(status_code=400, detail="不能删除自己的账号")
+
+    await db.delete(user)
+    await db.commit()
+
+    logger.info("[ADMIN] 删除用户 | user=%s by=%s", user.email, admin["email"])
+    return {"message": f"已删除用户 {user.email}"}

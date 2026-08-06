@@ -28,35 +28,51 @@ class HermesBridge:
         self.hermes_bin = "/opt/hermes/.venv/bin/hermes"
 
     async def _http_exec(self, command: str, timeout: int, env: dict | None = None) -> dict:
-        """通过 HTTP POST 在 hermes-agent 容器内执行命令"""
+        """通过 HTTP POST 在 hermes-agent 容器内执行命令（503 自动重试 3 次）"""
         payload = {"command": command, "timeout": timeout}
         if env:
             payload["env"] = env
 
-        logger.info("[BRIDGE][HTTP_EXEC] %s", command[:150])
+        last_error = ""
+        for attempt in range(3):
+            if attempt > 0:
+                wait = 10 * attempt
+                logger.info("[BRIDGE][RETRY] attempt=%d/%d waiting=%ds", attempt + 1, 3, wait)
+                await asyncio.sleep(wait)
 
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(timeout + 30)) as client:
-                response = await client.post(self.api_url, json=payload)
-                response.raise_for_status()
-                result = response.json()
+            logger.info("[BRIDGE][HTTP_EXEC] %s", command[:150])
 
-            logger.info(
-                "[BRIDGE][DONE] rc=%s stdout=%d stderr=%d",
-                result.get("exit_code"), len(result.get("stdout", "")), len(result.get("stderr", "")),
-            )
-            return {
-                "success": result.get("success", False),
-                "stdout": result.get("stdout", ""),
-                "stderr": result.get("stderr", ""),
-                "exit_code": result.get("exit_code", -1),
-            }
-        except httpx.TimeoutException:
-            logger.error("[BRIDGE][TIMEOUT] timeout=%ds", timeout)
-            return {"success": False, "stdout": "", "stderr": f"超时（{timeout}秒）", "exit_code": -1}
-        except Exception as e:
-            logger.error("[BRIDGE][HTTP_FAIL] %s", str(e))
-            return {"success": False, "stdout": "", "stderr": f"连接失败: {str(e)}", "exit_code": -1}
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(timeout + 30)) as client:
+                    response = await client.post(self.api_url, json=payload)
+                    if response.status_code == 503:
+                        last_error = "Server busy (503), retrying..."
+                        logger.warning("[BRIDGE][503] attempt=%d/3", attempt + 1)
+                        continue
+                    response.raise_for_status()
+                    result = response.json()
+
+                logger.info(
+                    "[BRIDGE][DONE] rc=%s stdout=%d stderr=%d",
+                    result.get("exit_code"), len(result.get("stdout", "")), len(result.get("stderr", "")),
+                )
+                return {
+                    "success": result.get("success", False),
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", ""),
+                    "exit_code": result.get("exit_code", -1),
+                }
+            except httpx.TimeoutException:
+                logger.error("[BRIDGE][TIMEOUT] timeout=%ds", timeout)
+                return {"success": False, "stdout": "", "stderr": f"超时（{timeout}秒）", "exit_code": -1}
+            except Exception as e:
+                last_error = str(e)
+                logger.error("[BRIDGE][HTTP_FAIL] attempt=%d/3 %s", attempt + 1, last_error)
+                # 连接类错误也重试
+                if attempt < 2:
+                    continue
+
+        return {"success": False, "stdout": "", "stderr": f"连接失败（重试3次后）: {last_error}", "exit_code": -1}
 
     def _extract_agent_response(self, raw: str) -> str:
         """从 hermes chat -Q 输出中提取最终回复（去掉 session info 和 diff artifacts）"""

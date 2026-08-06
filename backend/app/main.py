@@ -55,6 +55,14 @@ app.add_middleware(
 app.include_router(router)
 
 
+@app.get("/jingche-xiaozhi")
+async def jingche_xiaozhi_landing():
+    """京车小智落地页"""
+    from fastapi.responses import HTMLResponse
+    content = open("/opt/data/jingche-xiaozhi-landing.html", encoding="utf-8").read()
+    return HTMLResponse(content)
+
+
 @app.get("/")
 async def root():
     return {

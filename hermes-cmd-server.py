@@ -18,7 +18,7 @@ logger = logging.getLogger("hermes-cmd-server")
 HERMES_BIN = "/opt/hermes/.venv/bin/hermes"
 LISTEN_PORT = int(os.environ.get("CMD_SERVER_PORT", "9888"))
 ALLOWED_PREFIX = os.environ.get("CMD_SERVER_ALLOWED_PREFIX", "")
-MAX_CONCURRENT = int(os.environ.get("CMD_SERVER_MAX_CONCURRENT", "3"))
+MAX_CONCURRENT = int(os.environ.get("CMD_SERVER_MAX_CONCURRENT", "5"))
 _exec_semaphore = threading.Semaphore(MAX_CONCURRENT)
 
 class Handler(BaseHTTPRequestHandler):

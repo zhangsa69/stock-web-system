@@ -36,3 +36,8 @@ logs/
 # SSL 证书（私钥不上传 Github）
 nginx/ssl/*.key
 nginx/ssl/*.crt
+
+# 内部资料（不上传 Github）
+.hermes/
+百度SEO资料.txt
+.codebuddy/

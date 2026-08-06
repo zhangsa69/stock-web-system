@@ -98,19 +98,18 @@ class AnalysisService:
             task_id, status.value, progress,
         )
 
-    async def get_cached_task(self, stock_code: str, skill_name: str) -> AnalysisTask | None:
-        """查找同一股票在缓存期内的已完成分析"""
+    async def get_cached_task(self, stock_code: str, skill_name: str, user_email: str = "") -> AnalysisTask | None:
+        """查找同一用户在同一股票缓存期内的已完成分析（per-user cache）"""
         cache_days = settings.analysis_cache_days
         cutoff = datetime.utcnow() - timedelta(days=cache_days)
-        result = await self.db.execute(
-            select(AnalysisTask)
-            .where(
-                AnalysisTask.stock_code == stock_code,
-                AnalysisTask.skill_name == skill_name,
-                AnalysisTask.status == TaskStatus.COMPLETED,
-                AnalysisTask.created_at >= cutoff,
-            )
-            .order_by(desc(AnalysisTask.created_at))
-            .limit(1)
+        stmt = select(AnalysisTask).where(
+            AnalysisTask.stock_code == stock_code,
+            AnalysisTask.skill_name == skill_name,
+            AnalysisTask.status == TaskStatus.COMPLETED,
+            AnalysisTask.created_at >= cutoff,
         )
+        if user_email:
+            stmt = stmt.where(AnalysisTask.user_email == user_email)
+        stmt = stmt.order_by(desc(AnalysisTask.created_at)).limit(1)
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()

@@ -15,7 +15,7 @@ class RechargeCode(Base):
     code: Mapped[str] = mapped_column(
         String(64), unique=True, nullable=False, index=True
     )
-    ticket_value: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 或 20
+    ticket_value: Mapped[int] = mapped_column(Integer, nullable=False)  # 2 / 30 / 50 / 100
     is_used: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     used_by: Mapped[str | None] = mapped_column(String(255), nullable=True)  # user email
     used_at: Mapped[datetime | None] = mapped_column(

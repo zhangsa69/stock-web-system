@@ -2,11 +2,14 @@
 分析 API 路由
 """
 import logging
+import sqlite3
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
+from ..utils.auth import get_current_user
 from ..schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -17,6 +20,8 @@ from ..services.analysis_service import AnalysisService
 from ..models.analysis import TaskStatus
 from ..models.user import User
 from ..utils.auth import get_current_user, get_optional_user
+
+SAMPLE_DB_PATH = Path("/app/sample_reports.db")
 
 logger = logging.getLogger("stock-analysis.api")
 router = APIRouter()
@@ -42,11 +47,11 @@ async def start_analysis(
     u = user_result.scalar_one_or_none()
     if not u:
         raise HTTPException(status_code=404, detail="用户不存在")
-    if u.tickets <= 0:
-        raise HTTPException(status_code=402, detail="点券余额不足，请先充值（每次分析消耗 1 点券）")
+    if u.tickets < 2:
+        raise HTTPException(status_code=402, detail="点券余额不足（需至少 2 点券），请先充值")
 
-    # 检查缓存
-    cached = await service.get_cached_task(req.stock_code, req.skill_name)
+    # 检查缓存（per-user：同一用户7天内分析过同一股票则直接返回）
+    cached = await service.get_cached_task(req.stock_code, req.skill_name, user_email=email)
     if cached:
         logger.info(
             "[ANALYSIS][CACHE_HIT] 命中缓存 | task_id=%s stock_code=%s",
@@ -69,8 +74,8 @@ async def start_analysis(
         task.id, req.stock_code,
     )
 
-    # ── 扣除 1 点券（先扣再提交任务，失败则回滚）──
-    u.tickets -= 1
+    # ── 扣除 2 点券（先扣再提交任务，失败则回滚）──
+    u.tickets -= 2
     await db.flush()
 
     # 提交 Celery 异步任务
@@ -87,7 +92,7 @@ async def start_analysis(
         )
     except Exception as e:
         # Celery 提交失败 → 回滚点券
-        u.tickets += 1
+        u.tickets += 2
         await db.flush()
         logger.error(
             "[ANALYSIS][CELERY_FAIL] Celery提交失败，点券已回滚 | task_id=%s reason=%s balance=%d",
@@ -145,11 +150,14 @@ async def get_analysis_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
     """获取分析历史列表"""
+    email = user["email"]
     service = AnalysisService(db)
-    total = await service.get_history_count()
+    total = await service.get_history_count(user_email=email)
     items = await service.get_history(
+        user_email=email,
         limit=page_size,
         offset=(page - 1) * page_size,
     )
@@ -186,12 +194,38 @@ async def download_report(
     if not task.report:
         raise HTTPException(status_code=404, detail="报告内容为空")
 
-    filename = f"{task.stock_code}_{task.stock_name or task.stock_code}_分析报告.md"
+    from urllib.parse import quote
+    safe_name = f"{task.stock_code}_{task.stock_name or task.stock_code}"
+    filename = f"{safe_name}_分析报告.md"
+    encoded = quote(filename)
     return Response(
         content=task.report.encode("utf-8"),
         media_type="text/markdown; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
     )
+
+
+@router.get("/samples/{stock_code}")
+async def get_sample_report(stock_code: str):
+    """读取示例报告（无需登录，展示用）"""
+    if not SAMPLE_DB_PATH.exists():
+        raise HTTPException(status_code=503, detail="示例报告库暂不可用")
+    try:
+        conn = sqlite3.connect(str(SAMPLE_DB_PATH))
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT stock_code, stock_name, report FROM sample_reports WHERE stock_code=?",
+            (stock_code,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="示例报告不存在")
+        return {
+            "stock_code": row["stock_code"],
+            "stock_name": row["stock_name"],
+            "report": row["report"],
+        }
+    finally:
+        conn.close()
 
 
 @router.get("/health")
