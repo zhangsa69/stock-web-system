@@ -14,12 +14,15 @@
 
 输入 A 股/港股代码，自动拉取近五年财报，通过 NotebookLM 大模型深度分析，生成结构化投资报告并发送至邮箱。全程自动化，从代码到报告只需十余分钟。
 
+首页同时集成 **大盘指数**（上证/深证成指/创业板指/沪深300）与 **全球市场**（道指/标普500/纳指/恒指/恒生科技）实时行情，方便用户开盘前快速把握市场全貌。
+
 ### 核心能力
 
 - **全自动财报采集** — 对接巨潮资讯网，自动拉取年报/半年报/季报，结构化提取上百项财务指标
 - **深度 AI 分析** — 财报上传 Google NotebookLM，大模型进行多维度解读：成长性、盈利能力、偿债能力、运营效率、现金流质量
 - **结构化报告** — 自动生成包含执行摘要、财务全景、估值分析、风险提示、投资建议等章节的专业报告
 - **邮件直达** — 报告直接发送至注册邮箱，支持历史回溯与下载
+- **市场速览** — 首页实时展示 A 股大盘指数 + 全球主要市场行情（纯前端，5 分钟缓存）
 
 ---
 
@@ -30,9 +33,10 @@
                                 ↕
                      Celery Worker → HTTP POST → hermes-agent:9888
                                                   (hermes-cmd-server.py)
-                                                  ThreadingHTTPServer + Semaphore(3)
+                                                  ThreadingHTTPServer + Semaphore(5)
                                      ↕
-                          hermes chat → cninfo-financial-analysis
+                          hermes chat → cninfo-financial-analysis（A股/港股）
+                                     → UZI-Skill deep-analysis（美股）
                                      → NotebookLM
 ```
 
@@ -40,7 +44,7 @@
 
 | 容器 | 镜像 | 用途 |
 |------|------|------|
-| `stock-nginx` | nginx:alpine | 反向代理 + 前端静态文件 |
+| `stock-nginx` | nginx:alpine | 反向代理 + 前端静态文件 + WebSocket 分流（/v2-secret → Xray） |
 | `stock-backend` | 自建 | FastAPI 主服务 |
 | `stock-celery-worker` | 自建 | Celery 异步分析任务 |
 | `stock-postgres` | postgres:15-alpine | 数据库 |
@@ -52,11 +56,12 @@
 
 | 层 | 技术 |
 |---|------|
-| 前端 | 纯 HTML/CSS/JS 单文件 SPA（Apple 白色简约风格，零框架零构建） |
+| 前端 | 纯 HTML/CSS/JS 单文件 SPA（Apple 白色简约风格，零框架零构建，含管理后台） |
 | 后端 | Python FastAPI + SQLAlchemy Async + Celery |
 | 数据库 | PostgreSQL 15 |
 | 缓存/队列 | Redis 7 |
 | AI 引擎 | Hermes Agent + NotebookLM（A股/港股）；UZI-Skill（美股） |
+| 行情数据 | 腾讯财经 gtimg（A股指数）+ 东方财富 push2delay（全球指数），浏览器直连 |
 | 部署 | Docker Compose |
 | 分析管道 | cninfo-financial-analysis（巨潮资讯 → NotebookLM） |
 
@@ -68,7 +73,7 @@
 
 - Docker & Docker Compose
 - 4GB+ 内存（推荐 8GB）
-- Hermes Agent 容器
+- Hermes Agent 容器（含 CNinfo2Notebookllm 管道）
 
 ### 部署步骤
 
@@ -112,15 +117,16 @@ stock-web-system/
 │   │   ├── services/           # hermes_bridge, email_service, analysis_service
 │   │   ├── tasks/              # Celery 任务 + 配置
 │   │   ├── utils/              # JWT 鉴权、限流
-│   │   ├── config.py           # 配置
+│   │   ├── config.py           # 配置（全部可由 .env 覆盖）
 │   │   ├── database.py         # 数据库初始化
 │   │   └── main.py             # FastAPI 入口
 │   └── Dockerfile
 ├── frontend/
 │   └── dist/
-│       └── index.html          # 苹果风格 SPA（单文件，80KB）
+│       └── index.html          # Apple 风格 SPA（单文件，含客户首页 + 管理后台）
 ├── nginx/
-│   └── nginx.conf              # Nginx 配置
+│   └── nginx.conf              # Nginx 配置（SPA 回退 + WebSocket 分流）
+├── scripts/                    # 运维诊断脚本（数据库查询、枚举修复等）
 ├── hermes-cmd-server.py        # Hermes Agent HTTP → CLI 桥接
 ├── docker-compose.yml
 └── README.md
@@ -132,30 +138,51 @@ stock-web-system/
 
 ### 用户系统
 
-- 邮箱注册 + 验证码验证
-- JWT 鉴权
+- 邮箱注册 + 验证码验证（Redis 管理，10 分钟过期）
+- JWT 鉴权（未验证用户不占数据库）
 - 点券余额管理
 - 未登录门控：所有分析操作需先登录
+- 忘记密码：两步验证码重置
 
 ### 点券充值
 
-- 4 档 3D 翻转充值卡片（1/20/50/100 点券）
-- 兑换码核销（16 位随机码）
-- 管理后台批量生成/导入/导出兑换码
+- 4 档翻转充值卡片（2/30/50/100 点券，每次分析消耗 2 点券）
+- 兑换码核销（唯一性校验，防重复使用）
+- 管理后台批量 CSV 导入/导出
+
+### 市场速览（首页）
+
+- **大盘指数**：上证指数 / 深证成指 / 创业板指 / 沪深300（腾讯财经，实时）
+- **全球市场**：道琼斯 / 标普500 / 纳斯达克 / 恒生指数 / 恒生科技（东方财富）
+- 纯前端实现，零后端依赖；5 分钟 localStorage 缓存 + 手动刷新
+- 桌面 4+5 列 / 移动端 2 列自适应
 
 ### 分析管道
 
-- 股票代码校验（A 股 6 位 / 港股 1-5 位）
-- 并发上限 3（Semaphore 控制）
-- 分析失败自动退点券
-- 余额不足客户端拦截
+- 股票代码校验（A 股 6 位 / 港股 1-5 位，前端三层防注入）
+- 并发上限 5（Semaphore 控制）+ Bridge 503 自动重试 + Celery 线性退避（最长 21 分钟）
+- 分析失败自动退点券（含 Celery 崩溃兜底）
+- 余额不足客户端拦截（阈值 = 扣除量 2）
+- 7 天 per-user 结果缓存（命中不重复扣费）
+
+### 报告体验
+
+- 报告直达邮箱 + 历史回溯下载（.md 格式）
+- 内嵌 Markdown 阅读器（`/md-reader.html`，暗色主题，支持目录/搜索/字号）
+- 首页快捷查看 4 支示例报告（独立 SQLite 库，不扣点券）
 
 ### 管理后台
 
-- 管理员验证码登录
-- 兑换码批量生成/CSV 导入/导出
-- 使用统计面板
-- 用户管理
+- 管理员验证码登录（Redis 存储，60 秒限流）
+- 兑换码批量生成 / CSV 导入 / 面值筛选 / 批量删除
+- 使用统计面板（用户/卡密/分析/点券四卡片）
+- 用户管理（删除）
+
+### SEO
+
+- meta / OG / Twitter 标签 + JSON-LD 结构化数据
+- robots.txt + sitemap.xml
+- 4 支示例股票静态 SEO 报告页（预渲染完整报告正文）
 
 ---
 
@@ -166,16 +193,18 @@ stock-web-system/
 scp index.html root@SERVER:/opt/data/stock-web-system/frontend/dist/
 docker exec stock-nginx nginx -s reload
 
-# 后端部署
-scp -r backend/app root@SERVER:/opt/data/stock-web-system/backend/
-docker compose up -d --build backend celery-worker
+# 后端部署（docker cp 热更新）
+scp backend/app/xxx.py root@SERVER:/opt/data/stock-web-system/backend/app/
+docker cp /opt/data/stock-web-system/backend/app/xxx.py stock-backend:/app/app/xxx.py
+docker cp /opt/data/stock-web-system/backend/app/xxx.py stock-celery-worker:/app/app/xxx.py
+docker compose restart backend celery-worker
 docker exec stock-nginx nginx -s reload  # 清除 DNS 缓存
 
 # 查看日志
 docker logs stock-backend --tail 50
 docker logs stock-celery-worker --tail 50
 
-# 重启 hermes-cmd-server
+# 重启 hermes-cmd-server（看门狗也会自动拉起）
 docker exec hermes-agent pkill -f hermes-cmd-server
 docker network connect stock-web-system_stock-network hermes-agent
 docker exec -d hermes-agent bash -c \
@@ -190,9 +219,10 @@ docker exec stock-postgres pg_dump -U stock_user stock_analysis > backup.sql
 ## ⚠️ 重要注意事项
 
 1. **不要 `docker compose up -d --build nginx`** — 会覆盖前端 SPA
-2. 后端重建后必须 `docker exec stock-nginx nginx -s reload`，否则 API 全部 502
-3. hermes-agent 重启后需手动重连网络 + 重启 cmd-server
-4. 本项目遵循 `编码规则.md` 中的增量开发协议
+2. 后端重建后必须 `docker exec stock-nginx nginx -s reload`，否则 API 全部 502（nginx DNS 缓存旧 IP）
+3. hermes-agent 重启后需手动重连网络 + 重启 cmd-server（宿主机 cron 看门狗每 30 秒自动检测）
+4. Redis 内存上限 256MB + Celery result 1h 过期，防 OOM
+5. 修改前端前必须先 scp 拉取服务器最新版，防止旧快照覆盖
 
 ---
 
@@ -204,7 +234,7 @@ docker exec stock-postgres pg_dump -U stock_user stock_analysis > backup.sql
 | 分析深度 | 浅显，依赖个人经验 | 数十秒出摘要，无交叉验证 | 十余分钟深度挖掘，22 维指标 |
 | 报告输出 | 零散，格式不统一 | 简单文本摘要 | 结构化专业报告 |
 | 时效性 | 难以追踪更新 | 无法自动追踪 | 实时对接数据源 |
-| 成本 | 单只股票数小时 | 免费但无法支撑决策 | 单次 ¥1，机构级分析 |
+| 成本 | 单只股票数小时 | 免费但无法支撑决策 | 单次 2 点券（¥2），机构级分析 |
 
 ---
 

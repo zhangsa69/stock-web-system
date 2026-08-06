@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
+from ..utils.auth import get_current_user
 from ..schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -149,11 +150,14 @@ async def get_analysis_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
     """获取分析历史列表"""
+    email = user["email"]
     service = AnalysisService(db)
-    total = await service.get_history_count()
+    total = await service.get_history_count(user_email=email)
     items = await service.get_history(
+        user_email=email,
         limit=page_size,
         offset=(page - 1) * page_size,
     )
