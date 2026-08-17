@@ -14,7 +14,7 @@
 
 输入 A 股/港股代码，自动拉取近五年财报，通过 NotebookLM 大模型深度分析，生成结构化投资报告并发送至邮箱。全程自动化，从代码到报告只需十余分钟。
 
-首页同时集成 **大盘指数**（上证/深证成指/创业板指/沪深300）与 **全球市场**（道指/标普500/纳指/恒指/恒生科技）实时行情，方便用户开盘前快速把握市场全貌。
+首页同时集成 **大盘指数**（上证/深证成指/创业板指/沪深300）与 **全球市场**（道指/标普500/纳指/恒指/恒生科技）实时行情，方便用户开盘前快速把握市场全貌；并内置 **市场研究驾驶舱**（`/mrd/`）一屏式实时行情大屏。
 <img width="1619" height="1065" alt="image" src="https://github.com/user-attachments/assets/6217c7e5-a658-40d4-ba79-b3175f756270" />
 
 ### 核心能力
@@ -62,7 +62,7 @@
 | 数据库 | PostgreSQL 15 |
 | 缓存/队列 | Redis 7 |
 | AI 引擎 | Hermes Agent + NotebookLM（A股/港股）；UZI-Skill（美股） |
-| 行情数据 | 腾讯财经 gtimg（A股指数）+ 东方财富 push2delay（全球指数），浏览器直连 |
+| 行情数据 | 腾讯财经 gtimg（A股指数）+ 东方财富 push2delay（全球指数），浏览器直连；驾驶舱由 mrd-server（Node :3000）提供 |
 | 部署 | Docker Compose |
 | 分析管道 | cninfo-financial-analysis（巨潮资讯 → NotebookLM） |
 
@@ -112,8 +112,8 @@ open http://localhost
 stock-web-system/
 ├── backend/                    # FastAPI 后端
 │   ├── app/
-│   │   ├── api/                # 路由：analysis, auth, recharge, admin
-│   │   ├── models/             # ORM：analysis, user, recharge
+│   │   ├── api/                # 路由：analysis, auth, recharge, admin, market
+│   │   ├── models/             # ORM：analysis, user, recharge, dashboard
 │   │   ├── schemas/            # Pydantic 校验
 │   │   ├── services/           # hermes_bridge, email_service, analysis_service
 │   │   ├── tasks/              # Celery 任务 + 配置
@@ -125,8 +125,9 @@ stock-web-system/
 ├── frontend/
 │   └── dist/
 │       └── index.html          # Apple 风格 SPA（单文件，含客户首页 + 管理后台）
+├── mrd-dist/                   # 市场研究驾驶舱前端构建产物（React SPA，/mrd/ 路径）
 ├── nginx/
-│   └── nginx.conf              # Nginx 配置（SPA 回退 + WebSocket 分流）
+│   └── nginx.conf              # Nginx 配置（SPA 回退 + WebSocket 分流 + MRD API 分流）
 ├── scripts/                    # 运维诊断脚本（数据库查询、枚举修复等）
 ├── hermes-cmd-server.py        # Hermes Agent HTTP → CLI 桥接
 ├── docker-compose.yml
@@ -158,6 +159,15 @@ stock-web-system/
 - **全球市场**：道琼斯 / 标普500 / 纳斯达克 / 恒生指数 / 恒生科技（东方财富）
 - 纯前端实现，零后端依赖；5 分钟 localStorage 缓存 + 手动刷新
 - 桌面 4+5 列 / 移动端 2 列自适应
+- 8 秒 fetch 超时保护：数据源挂起自动中止，避免页面无限转圈
+
+### 市场研究驾驶舱（`/mrd/`）
+
+- 一屏式实时行情大屏：全球关键指数、板块热点、资金流向、7×24 快讯、个股榜单、大宗商品、美债曲线、产业链全景
+- 沪深港美指数 + 大宗商品 + 美债收益率 + 板块资金流多维度同屏
+- 自选股（代码/名称/拼音检索）、产业链上下游（大模型/具身智能/半导体/新能源/创新药等）自定义图谱
+- 独立前端构建（React 单页应用）由 `mrd-server`（Node, :3000）提供数据 API
+- 深色大屏主题，支持区域放大、轮播、全屏展示；首屏骨架屏动画提示首次加载约 1 分钟
 
 ### 分析管道
 
