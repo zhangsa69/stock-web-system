@@ -1,6 +1,6 @@
 # 元基财报分析引擎
 
-> 基于企业财报深挖核心基本面的超级 AI 分析平台
+> 基于企业财报深挖核心基本面的超级 AI 分析平台 访问https://miaoousc.xyz
 
 [![Deploy](https://img.shields.io/badge/deploy-Docker%20Compose-blue)](https://github.com/zhangsa69/stock-web-system)
 [![Frontend](https://img.shields.io/badge/frontend-纯HTML%20SPA-green)](#)
@@ -15,6 +15,7 @@
 输入 A 股/港股代码，自动拉取近五年财报，通过 NotebookLM 大模型深度分析，生成结构化投资报告并发送至邮箱。全程自动化，从代码到报告只需十余分钟。
 
 首页同时集成 **大盘指数**（上证/深证成指/创业板指/沪深300）与 **全球市场**（道指/标普500/纳指/恒指/恒生科技）实时行情，方便用户开盘前快速把握市场全貌。
+<img width="1619" height="1065" alt="image" src="https://github.com/user-attachments/assets/6217c7e5-a658-40d4-ba79-b3175f756270" />
 
 ### 核心能力
 
@@ -149,6 +150,7 @@ stock-web-system/
 - 4 档翻转充值卡片（2/30/50/100 点券，每次分析消耗 2 点券）
 - 兑换码核销（唯一性校验，防重复使用）
 - 管理后台批量 CSV 导入/导出
+<img width="1424" height="1195" alt="image" src="https://github.com/user-attachments/assets/cc7442b5-9924-498b-b9d8-a1362cf2fe77" />
 
 ### 市场速览（首页）
 
@@ -170,6 +172,9 @@ stock-web-system/
 - 报告直达邮箱 + 历史回溯下载（.md 格式）
 - 内嵌 Markdown 阅读器（`/md-reader.html`，暗色主题，支持目录/搜索/字号）
 - 首页快捷查看 4 支示例报告（独立 SQLite 库，不扣点券）
+<img width="1829" height="1195" alt="image" src="https://github.com/user-attachments/assets/f8ba30a0-7a98-4b7e-a5d9-a19f2ab65b19" />
+<img width="1675" height="1205" alt="image" src="https://github.com/user-attachments/assets/db310e50-5e33-428f-83b5-48c324faba2f" />
+<img width="1544" height="1221" alt="image" src="https://github.com/user-attachments/assets/b81119d9-6fcf-4cea-8bbc-f5a76b239226" />
 
 ### 管理后台
 
