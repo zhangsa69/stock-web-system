@@ -40,3 +40,7 @@ nginx/ssl/*.crt
 .codebuddy/
 百度SEO资料.txt
 .hermes/
+
+# nginx config backups
+*.bak
+*.bak-*

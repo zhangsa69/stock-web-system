@@ -50,20 +50,7 @@ async def start_analysis(
     if u.tickets < 2:
         raise HTTPException(status_code=402, detail="点券余额不足（需至少 2 点券），请先充值")
 
-    # 检查缓存（per-user：同一用户7天内分析过同一股票则直接返回）
-    cached = await service.get_cached_task(req.stock_code, req.skill_name, user_email=email)
-    if cached:
-        logger.info(
-            "[ANALYSIS][CACHE_HIT] 命中缓存 | task_id=%s stock_code=%s",
-            cached.id, req.stock_code,
-        )
-        return AnalysisResponse(
-            task_id=cached.id,
-            status="completed",
-            estimated_seconds=0,
-        )
-
-    # 创建任务
+    # 创建任务（不做缓存，每次分析都重新执行）
     task = await service.create_task(
         stock_code=req.stock_code,
         skill_name=req.skill_name,
