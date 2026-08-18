@@ -1633,6 +1633,41 @@ a:hover { text-decoration: underline; }
 .stat-card .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
 .stat-card .stat-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
 
+/* ── 访问统计页 ── */
+.visit-chart {
+  display: flex; align-items: flex-end; gap: 12px;
+  background: #fff; border-radius: var(--radius);
+  padding: 24px 20px 16px; box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-light);
+  height: 200px; margin-bottom: 24px;
+  overflow-x: auto;
+}
+.visit-col {
+  flex: 1; min-width: 52px; height: 100%;
+  display: flex; flex-direction: column;
+  justify-content: flex-end; align-items: center; gap: 6px;
+}
+.visit-bar-wrap {
+  width: 100%; max-width: 44px; height: 140px;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.visit-bar {
+  width: 100%; max-width: 44px;
+  background: linear-gradient(180deg, var(--accent) 0%, #7bb8f0 100%);
+  border-radius: 8px 8px 4px 4px;
+  min-height: 4px;
+  transition: all 0.3s ease;
+}
+.visit-col:hover .visit-bar { background: var(--accent-hover); }
+.visit-val { font-size: 12px; font-weight: 600; color: var(--text); }
+.visit-date { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+.stats-table-wrap { background: #fff; border-radius: var(--radius); box-shadow: var(--card-shadow); border: 1px solid var(--border-light); overflow: hidden; }
+.stats-table-wrap table { width: 100%; border-collapse: collapse; }
+.stats-table-wrap th { background: var(--bg-soft); padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); }
+.stats-table-wrap td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--border-light); }
+.stats-table-wrap tr:last-child td { border-bottom: none; }
+.stats-table-wrap tr.total td { font-weight: 700; color: var(--text); background: rgba(0,113,227,0.04); }
+
 .data-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--card-shadow); }
 .data-table th { background: var(--bg-soft); padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); }
 .data-table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--border-light); }
@@ -2467,6 +2502,7 @@ a:hover { text-decoration: underline; }
     <a class="active" onclick="adminNavigate('dashboard')">📊 仪表盘</a>
     <a onclick="adminNavigate('codes')">🎫 卡密管理</a>
     <a onclick="adminNavigate('users')">👥 用户管理</a>
+    <a onclick="adminNavigate('stats')">📈 访问统计</a>
     <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
   </div>
   <div class="admin-main">
@@ -2488,6 +2524,7 @@ a:hover { text-decoration: underline; }
     <a onclick="adminNavigate('dashboard')">📊 仪表盘</a>
     <a class="active" onclick="adminNavigate('codes')">🎫 卡密管理</a>
     <a onclick="adminNavigate('users')">👥 用户管理</a>
+    <a onclick="adminNavigate('stats')">📈 访问统计</a>
     <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
   </div>
   <div class="admin-main">
@@ -2549,6 +2586,7 @@ a:hover { text-decoration: underline; }
     <a onclick="adminNavigate('dashboard')">📊 仪表盘</a>
     <a onclick="adminNavigate('codes')">🎫 卡密管理</a>
     <a class="active" onclick="adminNavigate('users')">👥 用户管理</a>
+    <a onclick="adminNavigate('stats')">📈 访问统计</a>
     <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
   </div>
   <div class="admin-main">
@@ -2565,6 +2603,35 @@ a:hover { text-decoration: underline; }
     <div class="pagination" id="usersPagination"></div>
   </div>
 </section>
+<!-- Admin Stats -->
+<section class="admin-page" id="page-admin-stats">
+  <div class="admin-header">
+    <h2>📈 访问统计</h2>
+    <div class="admin-header-actions">
+      <button class="btn btn-ghost" onclick="adminLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="admin-sidebar">
+    <a onclick="adminNavigate('dashboard')">📊 仪表盘</a>
+    <a onclick="adminNavigate('codes')">🎫 卡密管理</a>
+    <a onclick="adminNavigate('users')">👥 用户管理</a>
+    <a class="active" onclick="adminNavigate('stats')">📈 访问统计</a>
+    <a onclick="adminLogout()" style="color:var(--red);">🚪 退出</a>
+  </div>
+  <div class="admin-main">
+    <div class="stat-grid" id="statsCards">
+      <div class="stat-card"><div class="stat-label">加载中...</div></div>
+    </div>
+    <div class="visit-chart" id="statsChart"></div>
+    <div class="stats-table-wrap">
+      <table>
+        <thead><tr><th>日期</th><th>访问量</th></tr></thead>
+        <tbody id="statsTable"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ========================================================================
@@ -3448,6 +3515,7 @@ function adminNavigate(subpage) {
   if (subpage === 'dashboard') loadAdminDashboard();
   if (subpage === 'codes') loadAdminCodes();
   if (subpage === 'users') loadAdminUsers();
+  if (subpage === 'stats') loadAdminStats();
   
   // Update sidebar active
   document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
@@ -3485,6 +3553,44 @@ async function adminApiFetch(path, options) {
     throw err;
   }
   return data;
+}
+
+async function loadAdminStats() {
+  try {
+    const d = await adminApiFetch('/admin/stats/visits');
+    const days = d.days || [];
+    const total = d.total || 0;
+    const todayCount = days.length ? days[days.length - 1].count : 0;
+    const sum7 = days.reduce(function(s, x) { return s + (x.count || 0); }, 0);
+    const peak = days.length ? Math.max.apply(null, days.map(function(x) { return x.count || 0; })) : 0;
+
+    document.getElementById('statsCards').innerHTML = [
+      { label: '总访问量', value: total, sub: '累计页面访问次数' },
+      { label: '今日访问', value: todayCount, sub: '今天 00:00 起' },
+      { label: '近7天合计', value: sum7, sub: '最近 7 天' },
+      { label: '近7天峰值', value: peak, sub: '单日最高访问' },
+    ].map(function(s) {
+      return '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value">' + s.value + '</div><div class="stat-sub">' + s.sub + '</div></div>';
+    }).join('');
+
+    const max = Math.max.apply(null, days.map(function(x) { return x.count || 0; }).concat([1]));
+    document.getElementById('statsChart').innerHTML = days.map(function(x) {
+      const h = Math.max(4, Math.round((x.count || 0) / max * 140));
+      const dateLabel = x.date.slice(5);
+      const isToday = x.date === days[days.length - 1].date ? ' style="color:var(--accent);"' : '';
+      return '<div class="visit-col">' +
+        '<div class="visit-label" style="font-size:11px;color:var(--text-tertiary);">' + x.count + '</div>' +
+        '<div class="visit-bar-wrap"><div class="visit-bar" style="height:' + h + 'px" title="' + x.date + ' : ' + x.count + ' 次"></div></div>' +
+        '<div class="visit-date"' + isToday + '>' + dateLabel + '</div>' +
+        '</div>';
+    }).join('');
+
+    document.getElementById('statsTable').innerHTML = days.map(function(x) {
+      return '<tr><td>' + x.date + '</td><td>' + x.count + ' 次</td></tr>';
+    }).join('') + '<tr class="total"><td>总访问量</td><td>' + total + ' 次</td></tr>';
+  } catch (err) {
+    document.getElementById('statsCards').innerHTML = '<div class="stat-card"><div class="stat-label">加载失败</div><div class="stat-value" style="color:var(--red);font-size:16px;">' + (err.message || '请重试') + '</div></div>';
+  }
 }
 
 async function loadAdminDashboard() {
@@ -3651,6 +3757,7 @@ function init() {
       if (subpage === 'dashboard') loadAdminDashboard();
       if (subpage === 'codes') loadAdminCodes();
       if (subpage === 'users') loadAdminUsers();
+      if (subpage === 'stats') loadAdminStats();
     } else {
       showAdminPage('admin-login');
     }
@@ -3663,6 +3770,8 @@ function init() {
   if (authToken) {
     loadBalance();
   }
+  // 访问统计打点（轻量，失败静默）
+  try { fetch(API_BASE + '/admin/visit', { method: 'POST', keepalive: true }).catch(function(){}); } catch(e) {}
   // Trigger initial scroll animation check
   setTimeout(handleScrollAnimations, 100);
 

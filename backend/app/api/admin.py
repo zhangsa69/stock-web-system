@@ -457,3 +457,65 @@ async def delete_user(
 
     logger.info("[ADMIN] 删除用户 | user=%s by=%s", user.email, admin["email"])
     return {"message": f"已删除用户 {user.email}"}
+
+
+# ── 访问统计 ──
+
+class VisitDay(BaseModel):
+    date: str
+    count: int
+
+class VisitStatsResponse(BaseModel):
+    total: int
+    days: list[VisitDay]
+
+@router.post("/visit")
+async def record_visit(db: AsyncSession = Depends(get_db)):
+    """页面访问打点（无需登录，前端页面加载时调用）"""
+    from ..models.visit import PageVisit
+    from datetime import date as _date
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    today = _date.today()
+    stmt = pg_insert(PageVisit).values(visit_date=today, count=1)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[PageVisit.visit_date],
+        set_={"count": PageVisit.count + 1},
+    )
+    await db.execute(stmt)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/stats/visits", response_model=VisitStatsResponse)
+async def get_visit_stats(
+    db: AsyncSession = Depends(get_db),
+    admin: dict = Depends(get_current_admin),
+):
+    """最近7天 + 总访问量"""
+    from ..models.visit import PageVisit
+    from datetime import date as _date, timedelta
+
+    today = _date.today()
+    start = today - timedelta(days=6)
+
+    rows = (
+        (await db.execute(
+            select(PageVisit.visit_date, PageVisit.count)
+            .where(PageVisit.visit_date >= start)
+            .order_by(PageVisit.visit_date)
+        ))
+        .all()
+    )
+
+    count_map = {r[0]: r[1] for r in rows}
+    days = []
+    for i in range(7):
+        d = start + timedelta(days=i)
+        days.append(VisitDay(date=d.isoformat(), count=count_map.get(d, 0)))
+
+    total = (
+        await db.execute(select(func.coalesce(func.sum(PageVisit.count), 0)))
+    ).scalar_one()
+
+    return VisitStatsResponse(total=total, days=days)
