@@ -643,6 +643,94 @@ a:hover { text-decoration: underline; }
   }
 }
 
+/* ========== PLAN CARDS (系统定价) ========== */
+.plan-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 36px;
+}
+.plan-card {
+  position: relative;
+  background: #fff;
+  border-radius: 24px;
+  padding: 36px 32px 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+.plan-free { border: 1px solid rgba(52,199,89,0.25); }
+.plan-badge {
+  position: absolute;
+  top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--green); color: #fff;
+  font-size: 12px; font-weight: 700;
+  padding: 5px 14px; border-radius: var(--radius-pill);
+  letter-spacing: 0.5px; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(52,199,89,0.35);
+  z-index: 2;
+}
+.plan-head h3 {
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.3px; color: var(--text);
+  margin-bottom: 8px;
+}
+.plan-price {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 6px;
+}
+.price-num {
+  font-size: 44px; font-weight: 700;
+  letter-spacing: -1px; color: var(--text);
+  line-height: 1;
+}
+.price-free { color: var(--green); }
+.price-unit {
+  font-size: 15px; color: var(--text-secondary);
+  font-weight: 500;
+}
+.plan-desc {
+  font-size: 14px; color: var(--text-secondary);
+  line-height: 1.6; margin-bottom: 20px;
+}
+.plan-feats {
+  list-style: none; padding: 0; margin: 0 0 24px;
+  flex: 1;
+}
+.plan-feats li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; color: var(--text);
+  line-height: 1.65; padding: 7px 0;
+}
+.plan-feats .check {
+  color: var(--green); font-weight: 700;
+  flex-shrink: 0;
+}
+.plan-card .btn { width: 100%; padding: 14px 20px; font-size: 16px; }
+.btn-accent-free {
+  width: 100%;
+  background: var(--green); color: #fff;
+  padding: 14px 20px; border-radius: var(--radius-pill);
+  border: none; font-size: 16px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all var(--transition);
+}
+.btn-accent-free:hover {
+  background: #2db84f; transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(52,199,89,0.3);
+}
+.btn-accent-free:active { transform: translateY(0); }
+@media (max-width: 768px) {
+  .plan-grid { grid-template-columns: 1fr; gap: 20px; }
+  .plan-card { padding: 30px 22px 24px; }
+}
+
 /* ========== COMPARISON TABLE ========== */
 .comparison-table {
   width: 100%; border-collapse: collapse;
@@ -1918,54 +2006,47 @@ a:hover { text-decoration: underline; }
     </div>
   </div>
 
-  <!-- Comparison Table -->
+  <!-- System Pricing -->
   <div class="section" id="pricingSection">
     <div class="container">
-      <h2 class="section-title">系统优势</h2>
-      <p class="section-subtitle">对比传统方式，元基鉴股分析引擎全面领先</p>
-      <div style="overflow-x: auto;">
-<table class="comparison-table">
-          <thead>
-            <tr>
-              <th>对比维度</th>
-              <th>人工分析</th>
-              <th>免费大模型</th>
-              <th class="col-highlight">元基鉴股分析引擎</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>数据获取</td>
-              <td>需手动查找近五年财报，累计阅读数十万至百万字，极其耗时且容易遗漏</td>
-              <td>不支持超长文本（百万字级）上传与分析，一次只能分析数百字片段</td>
-              <td class="col-highlight"><span class="check">✓</span> 自动拉取近五年财报全文，支持百万字深度阅读与分析</td>
-            </tr>
-            <tr>
-              <td>分析深度与耗时</td>
-              <td>分析浅显，依赖个人经验判断，无法系统化覆盖多维指标</td>
-              <td>数十秒快速出报告，但仅能处理摘要级信息，缺乏深度交叉验证</td>
-              <td class="col-highlight"><span class="check">✓</span> 深度挖掘十余分钟，覆盖22项财务维度，交叉验证逻辑一致性</td>
-            </tr>
-            <tr>
-              <td>报告输出</td>
-              <td>需自行整理零散信息，格式不统一，难以复用</td>
-              <td>简单文本摘要，无结构化分析框架</td>
-              <td class="col-highlight"><span class="check">✓</span> 结构化专业报告，含执行摘要、估值分析、风险提示等完整章节</td>
-            </tr>
-            <tr>
-              <td>时效性</td>
-              <td>难以持续追踪，每次更新需重新查阅</td>
-              <td>无法自动追踪最新财报发布</td>
-              <td class="col-highlight"><span class="check">✓</span> 实时对接数据源，第一时间获取最新季报/年报</td>
-            </tr>
-            <tr>
-              <td>成本</td>
-              <td>时间成本极高，单只股票需数小时</td>
-              <td>免费但分析质量低，无法支撑投资决策</td>
-              <td class="col-highlight"><span class="check">✓</span> 单次仅需2点券（¥2），机构级分析，物超所值</td>
-            </tr>
-          </tbody>
-        </table>
+      <h2 class="section-title">系统定价</h2>
+      <p class="section-subtitle">透明定价 · 无隐藏消费 · 附赠完全免费的实时市场驾驶舱</p>
+
+      <div class="plan-grid">
+        <!-- 分析引擎 2点券 -->
+        <div class="plan-card">
+          <div class="plan-head">
+            <h3>元基鉴股分析引擎</h3>
+            <div class="plan-price"><span class="price-num">2</span><span class="price-unit">点券 / 次</span></div>
+            <p class="plan-desc">机构级财报深度分析，¥2 一只票，物超所值</p>
+          </div>
+          <ul class="plan-feats">
+            <li><span class="check">✓</span>自动拉取近五年财报全文，支持百万字深度阅读与分析</li>
+            <li><span class="check">✓</span>深度挖掘，覆盖22项财务维度，交叉验证逻辑一致性</li>
+            <li><span class="check">✓</span>结构化专业报告，含执行摘要、估值分析、风险提示等完整章节</li>
+            <li><span class="check">✓</span>实时对接数据源，第一时间获取最新季报/年报</li>
+            <li><span class="check">✓</span>单次仅需2点券(¥2)，机构级分析，物超所值</li>
+          </ul>
+          <button class="btn btn-primary" onclick="scrollToSection('rechargeSection')">充值开始分析</button>
+        </div>
+
+        <!-- 市场驾驶舱 完全免费 -->
+        <div class="plan-card plan-free">
+          <div class="plan-badge">完全免费</div>
+          <div class="plan-head">
+            <h3>市场驾驶舱大屏</h3>
+            <div class="plan-price"><span class="price-num price-free">免费</span><span class="price-unit">无限使用</span></div>
+            <p class="plan-desc">实时市场动态大屏，打开即看，无需注册</p>
+          </div>
+          <ul class="plan-feats">
+            <li><span class="check">✓</span>大盘指数实时行情：上证 / 深证 / 创业板 / 沪深300</li>
+            <li><span class="check">✓</span>全球市场隔夜外围：美股 / 港股 / 欧股一屏掌握</li>
+            <li><span class="check">✓</span>板块行情与资金流、热点板块、龙虎榜实时追踪</li>
+            <li><span class="check">✓</span>实时快讯滚动、热门榜单、美债收益率一览无余</li>
+            <li><span class="check">✓</span>大屏自适应多端，浏览器直接打开即用</li>
+          </ul>
+          <button class="btn-accent-free" onclick="window.open('/mrd/','_blank')">进入市场驾驶舱 →</button>
+        </div>
       </div>
     </div>
   </div>
