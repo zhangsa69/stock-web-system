@@ -1772,11 +1772,11 @@ a:hover { text-decoration: underline; }
     </div>
     <div class="nav-links" id="navLinks">
       <a onclick="navigate('home')" data-nav="home" class="active">首页</a>
+      <a href="/mrd/" target="_blank" data-nav="mrd">市场驾驶舱</a>
       <a onclick="scrollToSection('pricingSection')" data-nav="pricing">定价</a>
       <a onclick="scrollToSection('rechargeSection')" data-nav="recharge">充值</a>
       <a onclick="navigate('history')" data-nav="history">我的分析</a>
       <a onclick="scrollToSection('aboutSection')" data-nav="about">帮助与联系</a>
-      <a href="/mrd/" target="_blank" data-nav="mrd" style="color: var(--accent); font-weight: 600;">市场驾驶舱</a>
     </div>
     <div class="nav-actions" id="navActions">
       <!-- Populated by JS -->
@@ -1787,11 +1787,11 @@ a:hover { text-decoration: underline; }
 <!-- Mobile Navigation -->
 <div class="nav-mobile" id="navMobile">
   <a onclick="navigate('home');closeMobileNav()" data-mob-nav="home" class="active">🏠 首页</a>
+  <a href="/mrd/" target="_blank" data-mob-nav="mrd">📊 市场驾驶舱</a>
   <a onclick="scrollToSection('pricingSection');closeMobileNav()" data-mob-nav="pricing">💎 定价方案</a>
   <a onclick="scrollToSection('rechargeSection');closeMobileNav()" data-mob-nav="recharge">🪙 点券充值</a>
   <a onclick="navigate('history');closeMobileNav()" data-mob-nav="history">📋 我的分析</a>
   <a onclick="scrollToSection('aboutSection');closeMobileNav()" data-mob-nav="about">ℹ️ 帮助与联系</a>
-  <a href="/mrd/" target="_blank" data-mob-nav="mrd" style="color: var(--accent); font-weight: 600;">📊 市场驾驶舱</a>
   <div class="mobile-balance" id="mobileBalance" style="display:none"></div>
 </div>
 
@@ -2828,8 +2828,8 @@ function updateNavAuth() {
     }).catch(() => {});
   } else {
     container.innerHTML = `
-      <button class="btn btn-secondary btn-sm" onclick="navigate('login')">登录</button>
-      <button class="btn btn-primary btn-sm" onclick="navigate('login')">注册</button>
+      <button class="btn btn-secondary btn-sm" onclick="navigate('login')" style="font-size:18px;padding:6px 15px;">登录</button>
+      <button class="btn btn-primary btn-sm" onclick="navigate('login')" style="font-size:18px;padding:6px 15px;">注册</button>
     `;
   }
 }
