@@ -3,7 +3,7 @@
  * 作用: 满足 PWA 可安装性, 并缓存带 hash 的静态构建产物加速二次打开。
  * 注意: /api 为实时行情数据, 永不缓存; 页面导航始终走网络, 避免发到旧版本。
  */
-const STATIC_CACHE = "cockpit-static-v2";
+const STATIC_CACHE = "cockpit-static-v1";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -23,13 +23,8 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return; // 实时行情不缓存
 
-  // Vite 构建产物(/mrd/assets)与图标(/mrd/icons)带内容 hash, 可安全长缓存
-  if (
-    url.pathname.startsWith("/mrd/assets/") ||
-    url.pathname.startsWith("/mrd/icons/") ||
-    url.pathname.startsWith("/assets/") ||
-    url.pathname.startsWith("/icons/")
-  ) {
+  // Vite 构建产物(/assets)与图标带内容 hash, 可安全长缓存
+  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/")) {
     event.respondWith(
       caches.match(request).then(
         (hit) =>
