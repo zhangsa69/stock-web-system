@@ -1,257 +1,241 @@
-# 元基财报分析引擎
+# 元基鉴股
 
-> 基于企业财报深挖核心基本面的超级 AI 分析平台
+> 面向 A 股、港股和美股研究的 AI 财报分析与市场信息平台。
 
 [![Deploy](https://img.shields.io/badge/deploy-Docker%20Compose-blue)](https://github.com/zhangsa69/stock-web-system)
-[![Frontend](https://img.shields.io/badge/frontend-纯HTML%20SPA-green)](#)
-[![Backend](https://img.shields.io/badge/backend-FastAPI%20%2B%20Celery-teal)](#)
+[![Frontend](https://img.shields.io/badge/frontend-纯HTML%20SPA-green)](#技术栈)
+[![Backend](https://img.shields.io/badge/backend-FastAPI%20%2B%20Celery-teal)](#技术栈)
 
----
+## 项目简介
 
-## 🚀 项目简介
+元基鉴股基于 [CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) 的财报获取与 NotebookLM 集成能力，提供用户注册、点券充值、异步分析、邮件报告、历史记录和管理后台等完整 Web 功能。
 
-基于 [CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) 二次开发，在其财报获取与 NotebookLM 集成能力之上，构建了完整的 Web 平台：用户注册登录、点券充值、异步分析、邮件报告、管理后台等生产级功能。
+用户输入股票代码后，系统自动获取财报资料并调用对应分析管道，生成结构化投资研究报告并发送到邮箱。首页同时提供 A 股大盘、全球市场行情和市场研究驾驶舱；另有独立的美国持仓监控页面。
 
-输入 A 股/港股代码，自动拉取近五年财报，通过 NotebookLM 大模型深度分析，生成结构化投资报告并发送至邮箱。全程自动化，从代码到报告只需十余分钟。
+## 核心功能
 
-首页同时集成 **大盘指数**（上证/深证成指/创业板指/沪深300）与 **全球市场**（道指/标普500/纳指/恒指/恒生科技）实时行情，方便用户开盘前快速把握市场全貌。
+- **A 股 / 港股财报分析**：从巨潮资讯网获取年报、半年报和季报，交由 NotebookLM 深度分析。
+- **美股深度分析**：使用 UZI-Skill deep-analysis 管道完成研究分析。
+- **结构化报告**：包含执行摘要、财务全景、估值分析、风险提示和投资建议等内容。
+- **用户与点券系统**：邮箱注册、验证码、JWT 鉴权、点券余额、充值卡密和失败退券。
+- **异步任务处理**：Celery 执行分析任务，包含并发控制、失败重试和结果缓存。
+- **市场行情**：首页展示上证、深证、创业板、沪深 300，以及道指、标普 500、纳指、恒指和恒生科技。
+- **市场研究驾驶舱**：访问 `/mrd/`，提供市场数据和研究信息展示。
+- **美国持仓监控**：访问 `/congress/`，展示美国政治人物交易披露、持仓排行、买卖趋势和资产分类。
+- **管理后台**：卡密管理、用户管理、分析统计和系统数据维护。
+- **报告阅读**：支持历史报告下载和内嵌 Markdown 阅读器。
 
-### 核心能力
+## 系统架构
 
-- **全自动财报采集** — 对接巨潮资讯网，自动拉取年报/半年报/季报，结构化提取上百项财务指标
-- **深度 AI 分析** — 财报上传 Google NotebookLM，大模型进行多维度解读：成长性、盈利能力、偿债能力、运营效率、现金流质量
-- **结构化报告** — 自动生成包含执行摘要、财务全景、估值分析、风险提示、投资建议等章节的专业报告
-- **邮件直达** — 报告直接发送至注册邮箱，支持历史回溯与下载
-- **市场速览** — 首页实时展示 A 股大盘指数 + 全球主要市场行情（纯前端，5 分钟缓存）
+```text
+用户
+  │
+  ▼
+Nginx :80/:443
+  ├── 主站 SPA：/                 → frontend/dist
+  ├── 市场驾驶舱：/mrd/            → mrd-dist
+  ├── 美国持仓监控：/congress/     → congress-dist
+  ├── 业务 API：/api/*             → FastAPI :8000
+  └── WebSocket：/v2-secret        → Xray
 
----
-
-## 🏗️ 系统架构
-
+FastAPI backend :8000
+  ├── PostgreSQL 15
+  ├── Redis 7
+  └── Celery Worker
+        └── hermes-agent :9888
+              └── cninfo-financial-analysis / UZI-Skill
+                    └── NotebookLM
 ```
-用户 → nginx(:80) → FastAPI(backend:8000) → PostgreSQL + Redis
-                                ↕
-                     Celery Worker → HTTP POST → hermes-agent:9888
-                                                  (hermes-cmd-server.py)
-                                                  ThreadingHTTPServer + Semaphore(5)
-                                     ↕
-                          hermes chat → cninfo-financial-analysis（A股/港股）
-                                     → UZI-Skill deep-analysis（美股）
-                                     → NotebookLM
-```
 
-### 容器清单
+### Docker 服务
 
 | 容器 | 镜像 | 用途 |
-|------|------|------|
-| `stock-nginx` | nginx:alpine | 反向代理 + 前端静态文件 + WebSocket 分流（/v2-secret → Xray） |
-| `stock-backend` | 自建 | FastAPI 主服务 |
-| `stock-celery-worker` | 自建 | Celery 异步分析任务 |
-| `stock-postgres` | postgres:15-alpine | 数据库 |
-| `stock-redis` | redis:7-alpine | Celery broker/result + 限流 |
+|---|---|---|
+| `stock-nginx` | `nginx:alpine` | 反向代理、静态文件、WebSocket 分流 |
+| `stock-backend` | 本地构建 | FastAPI 主服务 |
+| `stock-celery-worker` | 本地构建 | 异步分析任务 |
+| `stock-postgres` | `postgres:15-alpine` | 业务数据库 |
+| `stock-redis` | `redis:7-alpine` | 缓存、队列和限流 |
 
----
-
-## 🎨 技术栈
+## 技术栈
 
 | 层 | 技术 |
-|---|------|
-| 前端 | 纯 HTML/CSS/JS 单文件 SPA（Apple 白色简约风格，零框架零构建，含管理后台） |
-| 后端 | Python FastAPI + SQLAlchemy Async + Celery |
+|---|---|
+| 前端 | 纯 HTML / CSS / JavaScript 单文件 SPA，Apple 白色简约风格 |
+| 后端 | Python FastAPI、SQLAlchemy Async、Celery |
 | 数据库 | PostgreSQL 15 |
-| 缓存/队列 | Redis 7 |
-| AI 引擎 | Hermes Agent + NotebookLM（A股/港股）；UZI-Skill（美股） |
-| 行情数据 | 腾讯财经 gtimg（A股指数）+ 东方财富 push2delay（全球指数），浏览器直连 |
-| 部署 | Docker Compose |
-| 分析管道 | cninfo-financial-analysis（巨潮资讯 → NotebookLM） |
+| 缓存与队列 | Redis 7 |
+| AI 引擎 | Hermes Agent、NotebookLM、UZI-Skill |
+| 财报数据 | 巨潮资讯网（CNinfo） |
+| 市场行情 | 腾讯财经 gtimg、东方财富 push2delay |
+| 部署 | Docker Compose + Nginx |
+| 美国持仓数据 | Kadoa Congress Trading Monitor 数据源 |
 
----
-
-## 📦 快速开始
+## 快速开始
 
 ### 环境要求
 
-- Docker & Docker Compose
-- 4GB+ 内存（推荐 8GB）
-- Hermes Agent 容器（含 CNinfo2Notebookllm 管道）
+- Docker 和 Docker Compose
+- 至少 4 GB 内存，推荐 8 GB
+- 可访问 NotebookLM 和相关数据源的 Hermes Agent 环境
 
-### 部署步骤
+### 部署
 
 ```bash
-# 1. 克隆仓库
 git clone https://github.com/zhangsa69/stock-web-system.git
 cd stock-web-system
 
-# 2. 配置环境变量
+# 首次部署时创建并填写环境变量
 cp .env.example .env
-# 编辑 .env 填写 JWT_SECRET、SMTP 等配置
+# 编辑 .env，填写数据库、JWT、SMTP 等配置
 
-# 3. 启动所有服务
+# 启动服务
 docker compose up -d
 
-# 4. 连接 hermes-agent 到 stock 网络
+# 将 hermes-agent 接入项目网络（如尚未接入）
 docker network connect stock-web-system_stock-network hermes-agent
 
-# 5. 在 hermes-agent 容器内启动 cmd-server
+# 启动 Hermes 命令桥接服务（按实际容器路径调整）
 docker exec -d hermes-agent bash -c \
   'nohup /opt/hermes/.venv/bin/python3 /opt/hermes/hermes-cmd-server.py > /tmp/cmd-server.log 2>&1 &'
 
-# 6. 重载 nginx（清除 DNS 缓存）
-docker exec stock-nginx nginx -s reload
+# 检查 Nginx 配置
+docker exec stock-nginx nginx -t
 
-# 7. 访问
-open http://localhost
+# 访问主站
+# http://localhost
 ```
 
----
+生产环境项目目录为：
 
-## 📂 项目结构
-
+```text
+/opt/data/stock-web-system
 ```
+
+## 项目结构
+
+```text
 stock-web-system/
-├── backend/                    # FastAPI 后端
+├── backend/
 │   ├── app/
-│   │   ├── api/                # 路由：analysis, auth, recharge, admin
-│   │   ├── models/             # ORM：analysis, user, recharge
-│   │   ├── schemas/            # Pydantic 校验
-│   │   ├── services/           # hermes_bridge, email_service, analysis_service
-│   │   ├── tasks/              # Celery 任务 + 配置
-│   │   ├── utils/              # JWT 鉴权、限流
-│   │   ├── config.py           # 配置（全部可由 .env 覆盖）
-│   │   ├── database.py         # 数据库初始化
-│   │   └── main.py             # FastAPI 入口
+│   │   ├── api/                    # analysis、auth、recharge、admin、market
+│   │   ├── models/                 # 用户、分析、充值、市场数据模型
+│   │   ├── schemas/                # Pydantic 数据校验
+│   │   ├── services/               # 分析、鉴权、邮件和 Hermes 桥接服务
+│   │   ├── tasks/                  # Celery 任务和配置
+│   │   ├── utils/                  # JWT、限流等工具
+│   │   ├── database.py
+│   │   └── main.py
 │   └── Dockerfile
 ├── frontend/
-│   └── dist/
-│       └── index.html          # Apple 风格 SPA（单文件，含客户首页 + 管理后台）
+│   └── dist/index.html             # 主站 SPA 和管理后台
+├── mrd-dist/                       # 市场研究驾驶舱静态文件
+├── congress-dist/                  # 美国持仓监控静态文件和数据
 ├── nginx/
-│   └── nginx.conf              # Nginx 配置（SPA 回退 + WebSocket 分流）
-├── scripts/                    # 运维诊断脚本（数据库查询、枚举修复等）
-├── hermes-cmd-server.py        # Hermes Agent HTTP → CLI 桥接
+│   ├── nginx.conf                  # 主 Nginx 配置
+│   └── mrd.conf                    # MRD 相关配置
+├── scripts/
+│   ├── check_*.py                  # 运维诊断脚本
+│   └── update_trump_data.py        # 持仓数据更新脚本
+├── hermes-cmd-server.py            # Hermes HTTP → CLI 桥接
 ├── docker-compose.yml
 └── README.md
 ```
 
----
+## 业务说明
 
-## 🔐 功能特性
+### 用户、鉴权和点券
 
-### 用户系统
+- 邮箱注册和验证码验证，验证码由 Redis 管理并自动过期。
+- JWT 鉴权，分析操作需要登录。
+- 充值卡密支持唯一性校验，防止重复核销。
+- 当前分析单次消耗 2 点券；分析失败时自动退还点券。
+- 支持忘记密码和验证码重置。
 
-- 邮箱注册 + 验证码验证（Redis 管理，10 分钟过期）
-- JWT 鉴权（未验证用户不占数据库）
-- 点券余额管理
-- 未登录门控：所有分析操作需先登录
-- 忘记密码：两步验证码重置
+### 分析任务
 
-### 点券充值
+- 支持 A 股、港股和美股代码校验。
+- Celery Worker 执行耗时分析，避免阻塞 Web 请求。
+- Hermes 桥接服务控制分析任务并限制并发。
+- 支持失败重试、结果缓存和历史记录。
+- 报告完成后发送到用户注册邮箱。
 
-- 4 档翻转充值卡片（2/30/50/100 点券，每次分析消耗 2 点券）
-- 兑换码核销（唯一性校验，防重复使用）
-- 管理后台批量 CSV 导入/导出
+### 市场与持仓页面
 
-### 市场速览（首页）
-
-- **大盘指数**：上证指数 / 深证成指 / 创业板指 / 沪深300（腾讯财经，实时）
-- **全球市场**：道琼斯 / 标普500 / 纳斯达克 / 恒生指数 / 恒生科技（东方财富）
-- 纯前端实现，零后端依赖；5 分钟 localStorage 缓存 + 手动刷新
-- 桌面 4+5 列 / 移动端 2 列自适应
-
-### 分析管道
-
-- 股票代码校验（A 股 6 位 / 港股 1-5 位，前端三层防注入）
-- 并发上限 5（Semaphore 控制）+ Bridge 503 自动重试 + Celery 线性退避（最长 21 分钟）
-- 分析失败自动退点券（含 Celery 崩溃兜底）
-- 余额不足客户端拦截（阈值 = 扣除量 2）
-- 7 天 per-user 结果缓存（命中不重复扣费）
-
-### 报告体验
-
-- 报告直达邮箱 + 历史回溯下载（.md 格式）
-- 内嵌 Markdown 阅读器（`/md-reader.html`，暗色主题，支持目录/搜索/字号）
-- 首页快捷查看 4 支示例报告（独立 SQLite 库，不扣点券）
-
-### 管理后台
-
-- 管理员验证码登录（Redis 存储，60 秒限流）
-- 兑换码批量生成 / CSV 导入 / 面值筛选 / 批量删除
-- 使用统计面板（用户/卡密/分析/点券四卡片）
-- 用户管理（删除）
-
-### SEO
-
-- meta / OG / Twitter 标签 + JSON-LD 结构化数据
-- robots.txt + sitemap.xml
-- 4 支示例股票静态 SEO 报告页（预渲染完整报告正文）
-
----
-
-## 🛠️ 常用运维命令
+- 首页市场行情由浏览器请求数据源，使用本地缓存降低重复请求。
+- `/mrd/` 为市场研究驾驶舱，静态文件独立部署。
+- `/congress/` 为美国持仓监控页面，数据文件位于 `congress-dist/data/`。
+- 更新美国持仓数据：
 
 ```bash
-# 前端部署（纯 HTML，零构建）
-scp index.html root@SERVER:/opt/data/stock-web-system/frontend/dist/
+python3 scripts/update_trump_data.py
+```
+
+该脚本会重新生成 `trump_raw.json`、`trump.json` 和 `trump.js`。如需重建 Nginx 挂载并安装定时更新任务，可执行：
+
+```bash
+bash scripts/deploy_congress.sh
+```
+
+## 常用运维命令
+
+```bash
+# 查看服务状态
+docker compose ps
+
+# 查看后端日志
+docker logs stock-backend --tail 100
+
+# 查看 Celery 日志
+docker logs stock-celery-worker --tail 100
+
+# 检查并重载 Nginx
+docker exec stock-nginx nginx -t
 docker exec stock-nginx nginx -s reload
 
-# 后端部署（docker cp 热更新）
-scp backend/app/xxx.py root@SERVER:/opt/data/stock-web-system/backend/app/
-docker cp /opt/data/stock-web-system/backend/app/xxx.py stock-backend:/app/app/xxx.py
-docker cp /opt/data/stock-web-system/backend/app/xxx.py stock-celery-worker:/app/app/xxx.py
+# 重启后端和 Worker
 docker compose restart backend celery-worker
-docker exec stock-nginx nginx -s reload  # 清除 DNS 缓存
 
-# 查看日志
-docker logs stock-backend --tail 50
-docker logs stock-celery-worker --tail 50
-
-# 重启 hermes-cmd-server（看门狗也会自动拉起）
-docker exec hermes-agent pkill -f hermes-cmd-server
-docker network connect stock-web-system_stock-network hermes-agent
-docker exec -d hermes-agent bash -c \
-  'nohup /opt/hermes/.venv/bin/python3 /opt/hermes/hermes-cmd-server.py > /tmp/cmd-server.log 2>&1 &'
+# 查看 Hermes 命令桥接服务日志
+docker exec hermes-agent tail -100 /tmp/cmd-server.log
 
 # 数据库备份
 docker exec stock-postgres pg_dump -U stock_user stock_analysis > backup.sql
 ```
 
----
+## 直接修改生产代码
 
-## ⚠️ 重要注意事项
+当前仓库统一使用 `main` 分支作为生产代码分支。修改流程：
 
-1. **不要 `docker compose up -d --build nginx`** — 会覆盖前端 SPA
-2. 后端重建后必须 `docker exec stock-nginx nginx -s reload`，否则 API 全部 502（nginx DNS 缓存旧 IP）
-3. hermes-agent 重启后需手动重连网络 + 重启 cmd-server（宿主机 cron 看门狗每 30 秒自动检测）
-4. Redis 内存上限 256MB + Celery result 1h 过期，防 OOM
-5. 修改前端前必须先 scp 拉取服务器最新版，防止旧快照覆盖
+```bash
+cd /opt/data/stock-web-system
+git switch main
+# 修改并验证代码
+git diff --check
+git add <files>
+git commit -m "type: describe the production change"
+git push origin main
+```
 
----
+生产环境修改前应先确认工作区状态，避免覆盖尚未提交的改动。前端静态文件修改后需要执行 Nginx reload；后端代码修改后通常需要重启 `backend` 和 `celery-worker`。
 
-## 🧪 系统优势（vs 人工分析 & 免费大模型）
+## 重要注意事项
 
-| 对比维度 | 人工分析 | 免费大模型 | 元基财报分析引擎 |
-|---------|---------|-----------|----------------|
-| 数据获取 | 手动查找近五年财报，数十万至百万字 | 不支持超长文本上传 | 自动拉取全文，百万字深度阅读 |
-| 分析深度 | 浅显，依赖个人经验 | 数十秒出摘要，无交叉验证 | 十余分钟深度挖掘，22 维指标 |
-| 报告输出 | 零散，格式不统一 | 简单文本摘要 | 结构化专业报告 |
-| 时效性 | 难以追踪更新 | 无法自动追踪 | 实时对接数据源 |
-| 成本 | 单只股票数小时 | 免费但无法支撑决策 | 单次 2 点券（¥2），机构级分析 |
+1. 不要在没有备份的情况下删除 `docker-data/`，其中包含数据库、Redis 和 PDF 缓存数据。
+2. 前端是已构建的静态产物，修改前应确认当前 `frontend/dist/` 是生产版本。
+3. 修改后端并重建容器时，需检查 Nginx 是否仍能解析新的 backend 容器地址。
+4. `nginx/ssl/` 是 Docker 挂载目录；即使当前采用 Cloudflare Flexible SSL，也不要随意删除其中的生产证书文件。
+5. 环境变量和密钥只放在 `.env`，不要提交到 GitHub。
+6. 美国持仓原始数据可能较大，更新脚本会覆盖 `congress-dist/data/` 下的生成文件。
+7. 修改生产代码前先执行 `git status --short --branch`，确认没有误留的工作区改动。
 
----
-
-## 📄 许可证
+## 许可证
 
 MIT License
 
----
+## 相关链接
 
-## 🔗 相关链接
-
-- [CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) — 本项目的数据采集与分析管道基础
+- [CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2NotebookLLM) — 财报采集与 NotebookLM 集成基础
 - [Hermes Agent](https://hermes-agent.nousresearch.com)
 - [编码规则](./编码规则.md)
-
----
-
-## 🙏 致谢
-
-本项目基于 [jarodise/CNinfo2Notebookllm](https://github.com/jarodise/CNinfo2Notebookllm) 二次开发，感谢原作者提供的巨潮资讯网财报爬取与 NotebookLM 集成方案，为本项目奠定了数据采集与 AI 分析的核心能力。
+- [VPS 部署指南](./VPS部署指南.md)
