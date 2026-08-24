@@ -11,6 +11,9 @@
 元基鉴股是一套面向 A 股与港股的 AI 财报研究平台。它把繁琐的财报获取、资料整理和深度阅读交给自动化分析流程，让用户只需输入股票代码，就能快速获得一份结构清晰、信息完整的研究报告。
 
 平台通过 Hermes Agent 串联巨潮资讯网与 NotebookLM，自动获取企业年报、半年报和季报，从成长性、盈利能力、偿债能力、运营效率、现金流质量等多个维度梳理企业基本面，并将关键结论沉淀为可持续查看的分析记录。
+<img width="1714" height="1160" alt="image" src="https://github.com/user-attachments/assets/dd0e53e1-87bb-495c-99c3-bafe8504de8a" />
+<img width="2560" height="1239" alt="image" src="https://github.com/user-attachments/assets/a5a7247c-d5f9-4f56-8435-74cae17d89a5" />
+<img width="1695" height="1180" alt="image" src="https://github.com/user-attachments/assets/a3683e96-5871-48e8-8a73-440a9c48c42e" />
 
 ## 核心能力
 
