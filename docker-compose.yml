@@ -10,6 +10,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./mrd-dist:/usr/share/nginx/mrd:ro
+      - ./congress-dist:/usr/share/nginx/congress:ro
     depends_on:
       - backend
     restart: unless-stopped

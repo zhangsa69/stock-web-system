@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>元基鉴股分析引擎</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230071e3'/%3E%3Ctext x='32' y='44' font-size='34' font-weight='700' text-anchor='middle' fill='%23fff' font-family='Arial,sans-serif'%3E元%3C/text%3E%3C/svg%3E">
 <!-- SEO Meta -->
 <meta name="description" content="元基鉴股 — AI驱动A股/港股财报深度分析平台。基于企业财报深挖核心基本面，几分钟获得机构级分析报告。支持五粮液、腾讯控股等热门股票，免费试用。">
 <meta name="keywords" content="股票分析,AI财报分析,A股分析,港股分析,财报解读,基本面分析,价值投资,元基鉴股,智能投研">
@@ -1771,11 +1772,12 @@ a:hover { text-decoration: underline; }
     </div>
     <div class="nav-links" id="navLinks">
       <a onclick="navigate('home')" data-nav="home" class="active">首页</a>
+      <a href="/mrd/" target="_blank" data-nav="mrd" style="color: var(--accent); font-weight: 600;">市场驾驶舱</a>
+      <a href="/congress/" target="_blank" data-nav="congress" style="color: var(--accent); font-weight: 600;">美国持仓监控</a>
       <a onclick="scrollToSection('pricingSection')" data-nav="pricing">定价</a>
       <a onclick="scrollToSection('rechargeSection')" data-nav="recharge">充值</a>
       <a onclick="navigate('history')" data-nav="history">我的分析</a>
       <a onclick="scrollToSection('aboutSection')" data-nav="about">帮助与联系</a>
-      <a href="/mrd/" target="_blank" data-nav="mrd" style="color: var(--accent); font-weight: 600;">市场驾驶舱</a>
     </div>
     <div class="nav-actions" id="navActions">
       <!-- Populated by JS -->
@@ -1786,11 +1788,12 @@ a:hover { text-decoration: underline; }
 <!-- Mobile Navigation -->
 <div class="nav-mobile" id="navMobile">
   <a onclick="navigate('home');closeMobileNav()" data-mob-nav="home" class="active">🏠 首页</a>
+  <a href="/mrd/" target="_blank" data-mob-nav="mrd" style="color: var(--accent); font-weight: 600;">📊 市场驾驶舱</a>
+  <a href="/congress/" target="_blank" data-mob-nav="congress" style="color: var(--accent); font-weight: 600;">📈 美国持仓监控</a>
   <a onclick="scrollToSection('pricingSection');closeMobileNav()" data-mob-nav="pricing">💎 定价方案</a>
   <a onclick="scrollToSection('rechargeSection');closeMobileNav()" data-mob-nav="recharge">🪙 点券充值</a>
   <a onclick="navigate('history');closeMobileNav()" data-mob-nav="history">📋 我的分析</a>
   <a onclick="scrollToSection('aboutSection');closeMobileNav()" data-mob-nav="about">ℹ️ 帮助与联系</a>
-  <a href="/mrd/" target="_blank" data-mob-nav="mrd" style="color: var(--accent); font-weight: 600;">📊 市场驾驶舱</a>
   <div class="mobile-balance" id="mobileBalance" style="display:none"></div>
 </div>
 
@@ -3810,7 +3813,5 @@ if (document.getElementById("gridA")) {
 
 init();
 </script>
-
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"0b151e7066044ee4bfd0e46469b526f3","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
